@@ -10,13 +10,14 @@ Documango is a terminal-first documentation browser for Go, Elixir, Rust, and ot
 
 ## Quick Start
 
-Build the CLI:
+Install & build the CLI:
 
 ```sh
+go mod tidy
 task build
 ```
 
-Create a database:
+Create a database/docset:
 
 ```sh
 ./tmp/documango db init -d ./tmp/docs.usde
