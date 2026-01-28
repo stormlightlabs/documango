@@ -2,21 +2,6 @@
 
 See [CHANGELOG](CHANGELOG.md) for completed work.
 
-## Milestone 8: MCP Server
-
-AI agent integration. No dependencies on TUI or Web interfaces.
-
-- MCP server implementation using official [Go SDK](https://github.com/modelcontextprotocol/go-sdk) v1.2.0+
-- `search_docs` tool with FTS5 trigram search and BM25 ranking
-- `read_doc` tool with zstd decompression
-- `get_symbol_context` tool for minimal token responses
-- Stdio transport (subprocess mode for Claude Desktop/CLI)
-- HTTP transport (network mode via StreamableHTTPHandler)
-- CLI subcommand: `documango mcp serve`
-- Verify with Claude Desktop, Claude CLI, & Antigravity
-
-**DoD**: AI agent can search and retrieve documentation programmatically.
-
 ## Milestone 9: Web Interface
 
 Browser-based reading.

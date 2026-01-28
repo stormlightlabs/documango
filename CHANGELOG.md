@@ -17,3 +17,5 @@
 - Dual-path ingestion strategy for Rust crates, supporting both Rustdoc JSON parsing and a Docs.rs HTML fallback scraper.
 
 - Github repository markdown ingestion (API + Clone fallback)
+
+- MCP server with `search_docs`, `read_doc`, and `get_symbol_context` tools for agent integration.
