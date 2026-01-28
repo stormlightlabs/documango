@@ -18,3 +18,7 @@ tasks:
     desc: Run Go vet checks
     cmds:
       - go vet ./...
+  cmt:
+    desc: Find inline comments in Go code
+    cmds:
+      - rg -n --pcre2 '^\s*//(?![!/])' -g '*.go'

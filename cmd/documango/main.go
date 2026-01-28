@@ -17,6 +17,7 @@ import (
 
 	"github.com/stormlightlabs/documango/internal/codec"
 	"github.com/stormlightlabs/documango/internal/db"
+	"github.com/stormlightlabs/documango/internal/ingest/atproto"
 	"github.com/stormlightlabs/documango/internal/ingest/golang"
 )
 
@@ -241,6 +242,7 @@ func newIngestCommand() *cobra.Command {
 		Short: "Ingest documentation sources",
 	}
 	cmd.AddCommand(newIngestGoCommand())
+	cmd.AddCommand(newIngestAtprotoCommand())
 	return cmd
 }
 
@@ -312,6 +314,38 @@ documango ingest go -d ./tmp/docs.usde --stdlib -s net/http -m 1
 	cmd.Flags().BoolVar(&stdlib, "stdlib", false, "Use stdlib mode (no module argument)")
 	cmd.Flags().StringVarP(&start, "start", "s", "", "Start at a specific stdlib package path (stdlib mode only)")
 	cmd.Flags().IntVarP(&maxPackages, "max-packages", "m", 0, "Limit number of stdlib packages ingested (stdlib mode only)")
+	return cmd
+}
+
+func newIngestAtprotoCommand() *cobra.Command {
+	var dbPath string
+	cmd := &cobra.Command{
+		Use:   "atproto",
+		Short: "Ingest AT Protocol docs (lexicons, specs, dev docs)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
+			if err := db.EnsureDir(dbPath); err != nil {
+				return err
+			}
+			store, err := db.Open(dbPath)
+			if err != nil {
+				return err
+			}
+			defer store.Close()
+			if err := store.EnsureSchema(ctx); err != nil {
+				return err
+			}
+
+			if err := atproto.IngestAtproto(ctx, atproto.Options{
+				DB: store,
+			}); err != nil {
+				return err
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "Ingested AT Protocol documentation")
+			return nil
+		},
+	}
+	cmd.Flags().StringVarP(&dbPath, "db", "d", "documango.usde", "Path to database (.usde)")
 	return cmd
 }
 
