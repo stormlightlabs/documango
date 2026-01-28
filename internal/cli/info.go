@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/stormlightlabs/documango/internal/codec"
 	"github.com/stormlightlabs/documango/internal/db"
 )
 
@@ -45,41 +46,34 @@ func runInfo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	symbolCount, size, err := getDocumentInfo(ctx, store, docRow.Path)
+	decompressed, err := codec.Decompress(docRow.Body)
+	if err != nil {
+		return err
+	}
+
+	symbolCount, err := getDocumentSymbols(ctx, store, docRow.Path)
 	if err != nil {
 		return err
 	}
 
 	p.PrintListItem("Path", p.FormatPath(docRow.Path))
 	p.PrintListItem("Format", docRow.Format)
-	p.PrintListItem("Size", fmt.Sprintf("%d bytes (compressed: %d bytes)", size, len(docRow.Body)))
+	p.PrintListItem("Size", fmt.Sprintf("%d bytes (compressed: %d bytes)", len(decompressed), len(docRow.Body)))
 	p.PrintListItem("Hash", docRow.Hash)
 	p.PrintListItem("Symbols", fmt.Sprintf("%d", symbolCount))
 
 	return nil
 }
 
-func getDocumentInfo(ctx context.Context, store *db.Store, path string) (int, int64, error) {
-	rows, err := store.DB().QueryContext(ctx,
-		`SELECT COUNT(DISTINCT symbol), COALESCE(SUM(LENGTH(signature)), 0)
+func getDocumentSymbols(ctx context.Context, store *db.Store, path string) (int, error) {
+	var count int
+	if err := store.DB().QueryRowContext(ctx,
+		`SELECT COUNT(DISTINCT symbol)
 		 FROM agent_context
 		 WHERE doc_id = (SELECT id FROM documents WHERE path = ?)`,
 		path,
-	)
-	if err != nil {
-		return 0, 0, err
+	).Scan(&count); err != nil {
+		return 0, err
 	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		return 0, 0, nil
-	}
-
-	var count int
-	var size int64
-	if err := rows.Scan(&count, &size); err != nil {
-		return 0, 0, err
-	}
-
-	return count, size, rows.Err()
+	return count, nil
 }

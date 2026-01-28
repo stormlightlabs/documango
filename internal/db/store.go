@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -168,10 +170,49 @@ func (s *Store) Search(ctx context.Context, query string, limit int) ([]SearchRe
 	return s.SearchPackage(ctx, query, "", limit)
 }
 
+var namespaces = []string{"atproto", "go", "rust", "hex", "github"}
+
+// SearchPackage searches for documents matching the given query and optional package prefix.
+//
+// It contains implicit namespace detection logic to handle queries like "rust/serde/Serialize".
+// If the query starts with a known namespace and contains a slash, it uses the namespace as the
+// package prefix and the rest of the query as the symbol to search for.
+//
+//   - For ATProto, it also handles special cases like "lexicon/", "docs/", and "spec/".
+//   - For Go/Hex, the first part after the namespace is usually the package name.
+//   - rust/crate/item -> rust/crate/%/item
+//   - rust/crate -> rust/crate/index or rust/crate/% (for crate root)
 func (s *Store) SearchPackage(ctx context.Context, query, packagePrefix string, limit int) ([]SearchResult, error) {
 	if limit <= 0 {
 		limit = 20
 	}
+
+	if packagePrefix == "" && strings.Contains(query, "/") {
+		parts := strings.Split(query, "/")
+		if len(parts) >= 2 {
+			ns := parts[0]
+			if slices.Contains(namespaces, ns) {
+				packagePrefix = ns + "/"
+				remaining := parts[1:]
+
+				if ns == "atproto" {
+					for _, sub := range []string{"lexicon", "docs", "spec"} {
+						if len(remaining) >= 2 && remaining[0] == sub {
+							packagePrefix += sub + "/"
+							remaining = remaining[1:]
+							break
+						}
+					}
+				} else if len(remaining) >= 2 {
+					packagePrefix += remaining[0] + "/"
+					remaining = remaining[1:]
+				}
+				query = strings.Join(remaining, " ")
+			}
+		}
+	}
+
+	query = SanitizeQuery(query)
 
 	var sqlQuery string
 	var args []any
@@ -213,6 +254,11 @@ func (s *Store) SearchPackage(ctx context.Context, query, packagePrefix string, 
 	return results, nil
 }
 
+// ReadDocument reads a document from the database by its path.
+//
+// Rust specific stuff:
+//   - rust/crate/sub/path -> rust/crate/%/sub/path
+//   - rust/crate -> rust/crate/index or rust/crate/% (for crate root)
 func (s *Store) ReadDocument(ctx context.Context, path string) (Document, error) {
 	var doc Document
 	err := s.db.QueryRowContext(
@@ -220,10 +266,49 @@ func (s *Store) ReadDocument(ctx context.Context, path string) (Document, error)
 		`SELECT path, format, body, raw_html, hash FROM documents WHERE path = ?`,
 		path,
 	).Scan(&doc.Path, &doc.Format, &doc.Body, &doc.RawHTML, &doc.Hash)
-	if err != nil {
+
+	if err == nil {
+		return doc, nil
+	}
+
+	if !errors.Is(err, sql.ErrNoRows) {
 		return Document{}, err
 	}
-	return doc, nil
+
+	err = s.db.QueryRowContext(
+		ctx,
+		`SELECT path, format, body, raw_html, hash FROM documents WHERE path LIKE ? LIMIT 1`,
+		path,
+	).Scan(&doc.Path, &doc.Format, &doc.Body, &doc.RawHTML, &doc.Hash)
+
+	if err == nil {
+		return doc, nil
+	}
+
+	parts := strings.Split(path, "/")
+	if len(parts) >= 2 && parts[0] == "rust" {
+		var fallbackPath string
+		if len(parts) >= 3 {
+			remaining := strings.Join(parts[2:], "/")
+			fallbackPath = fmt.Sprintf("rust/%s/%%/%s", parts[1], remaining)
+		} else if len(parts) == 2 {
+			fallbackPath = fmt.Sprintf("rust/%s/%%", parts[1])
+		}
+
+		if fallbackPath != "" {
+			err = s.db.QueryRowContext(
+				ctx,
+				`SELECT path, format, body, raw_html, hash FROM documents WHERE path LIKE ? LIMIT 1`,
+				fallbackPath,
+			).Scan(&doc.Path, &doc.Format, &doc.Body, &doc.RawHTML, &doc.Hash)
+
+			if err == nil {
+				return doc, nil
+			}
+		}
+	}
+
+	return Document{}, err
 }
 
 func (s *Store) ReadDocumentByID(ctx context.Context, id int64) (Document, error) {
@@ -293,4 +378,42 @@ func (s *Store) GetSymbolContext(ctx context.Context, symbol string) (AgentConte
 // DB returns the underlying SQL database connection.
 func (s *Store) DB() *sql.DB {
 	return s.db
+}
+
+// SanitizeQuery wraps the query in double quotes if it contains characters
+// that might break FTS5 (like slashes) and isn't already quoted.
+// It preserves column filters like "type:Func".
+func SanitizeQuery(q string) string {
+	if q == "" {
+		return q
+	}
+
+	if strings.HasPrefix(q, "\"") && strings.HasSuffix(q, "\"") {
+		return q
+	}
+
+	terms := strings.Fields(q)
+	var sanitized []string
+	for _, term := range terms {
+
+		if strings.HasPrefix(term, "\"") && strings.HasSuffix(term, "\"") {
+			sanitized = append(sanitized, term)
+			continue
+		}
+
+		lower := strings.ToLower(term)
+		if strings.HasPrefix(lower, "name:") || strings.HasPrefix(lower, "type:") || strings.HasPrefix(lower, "body:") {
+			sanitized = append(sanitized, term)
+			continue
+		}
+
+		if strings.ContainsAny(term, "/-.*():\"") {
+			escaped := strings.ReplaceAll(term, "\"", "\"\"")
+			sanitized = append(sanitized, "\""+escaped+"\"")
+		} else {
+			sanitized = append(sanitized, term)
+		}
+	}
+
+	return strings.Join(sanitized, " ")
 }

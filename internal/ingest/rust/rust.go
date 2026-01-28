@@ -14,6 +14,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/JohannesKaufmann/html-to-markdown/v2/converter"
+	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/base"
+	"github.com/JohannesKaufmann/html-to-markdown/v2/plugin/commonmark"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/charmbracelet/log"
 
@@ -80,18 +83,22 @@ func IngestCrate(ctx context.Context, opts Options) error {
 	log.Info("rust crate ingest starting", "crate", opts.Crate, "version", version)
 
 	return opts.DB.WithTx(ctx, func(tx *sql.Tx) error {
-		target, err := selectTarget(tmpDir)
-		if err != nil {
-			return err
+		crateName := strings.ReplaceAll(opts.Crate, "-", "_")
+		crateDir := filepath.Join(tmpDir, crateName)
+
+		if _, err := os.Stat(crateDir); os.IsNotExist(err) {
+			if target, err := selectTarget(tmpDir); err != nil {
+				return err
+			} else {
+				crateDir = filepath.Join(tmpDir, target, crateName)
+			}
 		}
 
-		crateName := strings.ReplaceAll(opts.Crate, "-", "_")
-		crateDir := filepath.Join(tmpDir, target, crateName)
 		if _, err := os.Stat(crateDir); os.IsNotExist(err) {
 			return fmt.Errorf("crate directory not found: %s", crateDir)
 		}
 
-		return ingestCrateDir(ctx, tx, opts.Crate, version, crateDir)
+		return ingestCrateDir(ctx, tx, opts.Crate, version, crateDir, "")
 	})
 }
 
@@ -297,10 +304,11 @@ func selectTarget(extractDir string) (string, error) {
 	return targets[0], nil
 }
 
-func ingestCrateDir(ctx context.Context, tx *sql.Tx, crate, version, crateDir string) error {
+func ingestCrateDir(ctx context.Context, tx *sql.Tx, crate, version, crateDir, modulePath string) error {
 	sidebarPath := findSidebarItems(crateDir)
 	if sidebarPath == "" {
-		return fmt.Errorf("sidebar-items.js not found in %s", crateDir)
+		log.Debug("sidebar-items.js not found, skipping recursive ingestion", "dir", crateDir)
+		return nil
 	}
 
 	sidebarData, err := os.ReadFile(sidebarPath)
@@ -344,23 +352,52 @@ func ingestCrateDir(ctx context.Context, tx *sql.Tx, crate, version, crateDir st
 	crateIndexPath := filepath.Join(crateDir, "index.html")
 	crateDoc, err := parseRustdocHTML(crateIndexPath)
 	if err == nil && crateDoc != "" {
-		log.Info("inserting crate index", "path", crateIndexPath, "doc_length", len(crateDoc))
-		docID, err := insertDoc(ctx, tx, crate, version, "", crateDoc)
+		log.Info("inserting index", "path", crateIndexPath, "module", modulePath)
+
+		docPath := ""
+		if modulePath == "" {
+			docPath = "rust/" + crate + "/index"
+		} else {
+			docPath = "rust/" + crate + "/Module/" + strings.ReplaceAll(modulePath, "::", "/")
+		}
+
+		docID, err := insertDoc(ctx, tx, crate, version, docPath, crateDoc)
 		if err != nil {
-			log.Error("failed to insert crate index", "path", crateIndexPath, "err", err)
 			return err
 		}
 
+		fullName := crate
+		if modulePath != "" {
+			fullName = crate + "::" + modulePath
+		}
+
+		itemType := "Crate"
+		if modulePath != "" {
+			itemType = "Module"
+		}
+
 		if err := db.InsertSearchEntryTx(ctx, tx, db.SearchEntry{
-			Name:  crate,
-			Type:  "Crate",
-			Body:  crate + " " + shared.FirstLine(crateDoc),
+			Name:  fullName,
+			Type:  itemType,
+			Body:  fullName + " " + shared.FirstLine(crateDoc),
 			DocID: docID,
 		}); err != nil {
 			return err
 		}
+
+		signature := extractSignature(crateDoc)
+		if signature != "" {
+			if err := db.InsertAgentContextTx(ctx, tx, db.AgentContext{
+				DocID:     docID,
+				Symbol:    fullName,
+				Signature: signature,
+				Summary:   shared.FirstLine(crateDoc),
+			}); err != nil {
+				return err
+			}
+		}
 	} else {
-		log.Warn("failed to parse crate index", "err", err)
+		log.Warn("failed to parse index", "path", crateIndexPath, "err", err)
 	}
 
 	processedCount := 0
@@ -368,7 +405,15 @@ func ingestCrateDir(ctx context.Context, tx *sql.Tx, crate, version, crateDir st
 		var htmlPath string
 		switch item.Type {
 		case "Module":
-			htmlPath = filepath.Join(crateDir, item.Name, "index.html")
+			subDir := filepath.Join(crateDir, item.Name)
+			subModulePath := item.Name
+			if modulePath != "" {
+				subModulePath = modulePath + "::" + item.Name
+			}
+			if err := ingestCrateDir(ctx, tx, crate, version, subDir, subModulePath); err != nil {
+				log.Warn("failed to ingest submodule", "module", subModulePath, "err", err)
+			}
+			continue
 		case "Struct":
 			htmlPath = filepath.Join(crateDir, "struct."+item.Name+".html")
 		case "Enum":
@@ -402,14 +447,25 @@ func ingestCrateDir(ctx context.Context, tx *sql.Tx, crate, version, crateDir st
 		}
 
 		processedCount++
-		docPath := fmt.Sprintf("rust/%s/%s/%s", crate, item.Type, item.Name)
+		// Build path: rust/crate/kind/[module/path/]name
+		prefix := "rust/" + crate + "/" + item.Type + "/"
+		if modulePath != "" {
+			prefix += strings.ReplaceAll(modulePath, "::", "/") + "/"
+		}
+		docPath := prefix + item.Name
+
 		docID, err := insertDoc(ctx, tx, crate, version, docPath, markdown)
 		if err != nil {
 			log.Error("failed to insert doc", "path", docPath, "err", err)
 			return err
 		}
 
-		fullName := crate + "::" + item.Name
+		fullName := crate
+		if modulePath != "" {
+			fullName += "::" + modulePath
+		}
+		fullName += "::" + item.Name
+
 		if err := db.InsertSearchEntryTx(ctx, tx, db.SearchEntry{
 			Name:  fullName,
 			Type:  item.Type,
@@ -432,7 +488,7 @@ func ingestCrateDir(ctx context.Context, tx *sql.Tx, crate, version, crateDir st
 		}
 	}
 
-	log.Info("ingestion complete", "processed", processedCount, "total", len(allItems))
+	log.Info("ingestion complete", "dir", crateDir, "processed", processedCount)
 	return nil
 }
 
@@ -476,52 +532,63 @@ func parseRustdocHTML(htmlPath string) (string, error) {
 		return "", err
 	}
 
-	var lines []string
+	return parseRustdocHTMLFromDoc(doc), nil
+}
 
-	doc.Find("main").Each(func(i int, s *goquery.Selection) {
-		s.Find("h1").Each(func(i int, h *goquery.Selection) {
-			title := h.Text()
-			title = strings.TrimSpace(title)
-			if title != "" {
-				lines = append(lines, "# "+title)
-			}
-		})
+func parseRustdocHTMLFromDoc(doc *goquery.Document) string {
+	conv := converter.NewConverter(
+		converter.WithPlugins(
+			base.NewBasePlugin(),
+			commonmark.NewCommonmarkPlugin(),
+		),
+	)
 
-		s.Find("pre.rust.item-decl").Each(func(i int, pre *goquery.Selection) {
-			code := pre.Text()
-			code = strings.TrimSpace(code)
-			if code != "" {
-				lines = append(lines, "```rust")
-				lines = append(lines, code)
-				lines = append(lines, "```")
-			}
-		})
+	// Remove unwanted elements globally before conversion
+	doc.Find("#copy-path").Remove()
+	doc.Find(".doc-anchor").Remove()
+	doc.Find("a.anchor").Remove()
+	doc.Find(".srclink").Remove()
+	doc.Find(".out-of-band").Remove()
+	doc.Find(".toggle-label").Remove()
+	doc.Find("summary.hideme").Remove()
+	doc.Find(".sidebar-top-doc").Remove()
+	doc.Find(".main-heading > h1 > a").Remove() // Remove breadcrumbs in h1
 
-		s.Find(".docblock").Each(func(i int, d *goquery.Selection) {
-			text := d.Text()
-			text = strings.TrimSpace(text)
-			if text != "" {
-				lines = append(lines, text)
-			}
-		})
-
-		s.Find("h2").Each(func(i int, h *goquery.Selection) {
-			title := h.Text()
-			title = strings.TrimSpace(title)
-			if title != "" {
-				lines = append(lines, "")
-				lines = append(lines, "## "+title)
-			}
-		})
-	})
-
-	result := strings.Join(lines, "\n")
-	result = strings.TrimSpace(result)
-	if result == "" {
-		return "", nil
+	main := doc.Find("main")
+	if main.Length() == 0 {
+		return ""
 	}
 
-	return result, nil
+	// Remove any remaining buttons in main
+	main.Find("button").Remove()
+
+	innerHTML, err := main.Html()
+	if err != nil {
+		return ""
+	}
+
+	md, err := conv.ConvertString(innerHTML)
+	if err != nil {
+		return ""
+	}
+
+	// Post-process to remove § and clean up
+	lines := strings.Split(md, "\n")
+	var cleanedLines []string
+	for _, line := range lines {
+		cleaned := cleanText(line)
+		// Specifically handle the case where headers might have § at the end
+		cleanedLines = append(cleanedLines, cleaned)
+	}
+
+	result := strings.Join(cleanedLines, "\n")
+	result = strings.TrimSpace(result)
+	return result
+}
+
+func cleanText(s string) string {
+	s = strings.ReplaceAll(s, "§", "")
+	return strings.TrimSpace(s)
 }
 
 func extractSignature(markdown string) string {
@@ -531,10 +598,16 @@ func extractSignature(markdown string) string {
 		if strings.HasPrefix(trimmed, "```rust") {
 			continue
 		}
+		// Handle modules: "# Module de" -> "mod de"
+		if strings.HasPrefix(trimmed, "# Module ") {
+			return "mod " + strings.TrimPrefix(trimmed, "# Module ")
+		}
 		if strings.HasPrefix(trimmed, "pub ") || strings.HasPrefix(trimmed, "fn ") ||
 			strings.HasPrefix(trimmed, "struct ") || strings.HasPrefix(trimmed, "enum ") ||
 			strings.HasPrefix(trimmed, "trait ") || strings.HasPrefix(trimmed, "type ") {
-			return strings.TrimSuffix(strings.TrimPrefix(trimmed, "pub "), ";")
+			// Remove pub for cleaner signatures in agent context
+			sig := strings.TrimSuffix(trimmed, ";")
+			return strings.TrimPrefix(sig, "pub ")
 		}
 	}
 	return ""

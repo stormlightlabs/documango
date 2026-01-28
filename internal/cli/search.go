@@ -39,7 +39,6 @@ receiving a boost.`,
 	cmd.Flags().StringVarP(&searchFormat, "format", "f", "table", "Output format (table, json, paths)")
 	cmd.Flags().BoolVarP(&searchFirst, "first", "1", false, "Return only the top result")
 	cmd.Flags().StringVarP(&searchPackage, "package", "p", "", "Filter by package path prefix")
-
 	return cmd
 }
 
@@ -56,6 +55,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	defer store.Close()
 
 	query := strings.Join(args, " ")
+
 	if searchType != "" {
 		query = fmt.Sprintf("type:%s %s", searchType, query)
 	}
@@ -66,9 +66,6 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	}
 
 	packagePrefix := searchPackage
-	if packagePrefix != "" && !strings.HasPrefix(packagePrefix, "go/") {
-		packagePrefix = "go/" + packagePrefix
-	}
 
 	ctx := context.Background()
 	results, err := store.SearchPackage(ctx, query, packagePrefix, limit)

@@ -43,10 +43,12 @@ Ingest GitHub repository documentation:
 ./tmp/documango add github folke/snacks.nvim -d ./tmp/docs.usde
 ```
 
-Search:
+Search (namespace-aware):
 
 ```sh
-./tmp/documango search -d ./tmp/docs.usde -l 10 "repo"
+./tmp/documango search "rust/serde/Serialize"
+./tmp/documango search "atproto/lexicon/app.bsky.feed.post"
+./tmp/documango search -p "go/net" "Client"
 ```
 
 Read a document (raw markdown):
@@ -109,7 +111,10 @@ Configuration is stored in TOML format:
 <details>
 <summary>Search</summary>
 
-- `documango search [-l N] [-t TYPE] [-f FORMAT] <query>`
+- `documango search [-l N] [-t TYPE] [-f FORMAT] [-p PREFIX] <query>`
+    - **Namespace Aware**: Queries starting with `rust/`, `go/`, `atproto/`, `hex/`, or `github/` automatically filter by that namespace.
+    - **Path Qualified**: Searching for `rust/serde/Serialize` automatically treats `rust/serde/` as a package prefix and `Serialize` as the symbol query.
+    - **FTS5 Optimized**: Handles special characters (`/`, `::`, `-`) automatically by quoting terms to prevent SQL syntax errors.
     - Formats: `table` (default), `json`, `paths`
     - Types: `Func`, `Type`, `Package`, `Lexicon`, etc.
 
