@@ -24,7 +24,7 @@ require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/charmbracelet/colorprofile v0.3.3 // indirect
-	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834 // indirect
+	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/charmbracelet/x/ansi v0.11.0 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.14 // indirect
 	github.com/charmbracelet/x/exp/golden v0.0.0-20250806222409-83e3a29d542f // indirect
@@ -57,7 +57,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
 	github.com/muesli/reflow v0.3.0 // indirect
-	github.com/muesli/termenv v0.16.0 // indirect
+	github.com/muesli/termenv v0.16.0
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/pjbgf/sha1cd v0.3.2 // indirect

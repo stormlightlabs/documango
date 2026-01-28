@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -70,7 +69,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(results) == 0 && !quiet {
-		fmt.Fprintln(os.Stderr, "No results found")
+		p.PrintError("No results found")
 		return nil
 	}
 
@@ -86,7 +85,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 
 func outputSearchTable(cmd *cobra.Command, results []db.SearchResult) error {
 	for _, res := range results {
-		fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%d\t%.4f\n", res.Name, res.Type, res.DocID, res.Score)
+		fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%d\t%.4f\n", p.FormatSymbol(res.Name), res.Type, res.DocID, res.Score)
 	}
 	return nil
 }

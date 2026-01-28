@@ -85,7 +85,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	if !quiet {
-		fmt.Fprintf(cmd.OutOrStdout(), "Initialized %s\n", targetPath)
+		p.PrintSuccess(fmt.Sprintf("Initialized %s", p.FormatPath(targetPath)))
 	}
 
 	return nil

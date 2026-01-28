@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 
 	"github.com/stormlightlabs/documango/internal/config"
@@ -15,6 +17,7 @@ var (
 	verbose bool
 	quiet   bool
 	noColor bool
+	p       *Printer = NewPrinter()
 )
 
 var rootCmd = &cobra.Command{
@@ -61,6 +64,11 @@ func init() {
 	if noColor {
 		rootCmd.CompletionOptions.DisableDescriptions = true
 	}
+	cobra.OnInitialize(func() {
+		if noColor {
+			lipgloss.SetColorProfile(termenv.Ascii)
+		}
+	})
 }
 
 func resolveDBPath() (string, error) {

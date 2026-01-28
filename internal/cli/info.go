@@ -9,7 +9,6 @@ import (
 	"github.com/stormlightlabs/documango/internal/db"
 )
 
-// newInfoCommand creates the info command.
 func newInfoCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "info <path>",
@@ -51,11 +50,11 @@ func runInfo(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Path:   %s\n", docRow.Path)
-	fmt.Fprintf(cmd.OutOrStdout(), "Format: %s\n", docRow.Format)
-	fmt.Fprintf(cmd.OutOrStdout(), "Size:   %d bytes (compressed: %d bytes)\n", size, len(docRow.Body))
-	fmt.Fprintf(cmd.OutOrStdout(), "Hash:   %s\n", docRow.Hash)
-	fmt.Fprintf(cmd.OutOrStdout(), "Symbols: %d\n", symbolCount)
+	p.PrintListItem("Path", p.FormatPath(docRow.Path))
+	p.PrintListItem("Format", docRow.Format)
+	p.PrintListItem("Size", fmt.Sprintf("%d bytes (compressed: %d bytes)", size, len(docRow.Body)))
+	p.PrintListItem("Hash", docRow.Hash)
+	p.PrintListItem("Symbols", fmt.Sprintf("%d", symbolCount))
 
 	return nil
 }

@@ -98,22 +98,23 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 }
 
-func addGoSource(ctx context.Context, cmd *cobra.Command, store *db.Store, source string, c *cache.FilesystemCache) error {
+func addGoSource(ctx context.Context, _ *cobra.Command, store *db.Store, source string, c *cache.FilesystemCache) error {
 	if addStdlib {
 		if source != "" {
 			return errors.New("module argument not allowed with --stdlib")
 		}
-		if err := golangingest.IngestStdlib(ctx, golangingest.StdlibOptions{
+		opts := golangingest.StdlibOptions{
 			DB:          store,
 			Version:     addVersion,
 			Start:       addStart,
 			MaxPackages: addMax,
 			Cache:       c,
-		}); err != nil {
+		}
+		if err := golangingest.IngestStdlib(ctx, opts); err != nil {
 			return err
 		}
 		if !quiet {
-			fmt.Fprintln(cmd.OutOrStdout(), "Ingested Go standard library")
+			p.PrintSuccess("Ingested Go standard library")
 		}
 		return nil
 	}
@@ -132,12 +133,12 @@ func addGoSource(ctx context.Context, cmd *cobra.Command, store *db.Store, sourc
 	}
 
 	if !quiet {
-		fmt.Fprintf(cmd.OutOrStdout(), "Ingested %s\n", source)
+		p.PrintSuccess(fmt.Sprintf("Ingested %s", p.FormatSymbol(source)))
 	}
 	return nil
 }
 
-func addAtprotoSource(ctx context.Context, cmd *cobra.Command, store *db.Store, c *cache.FilesystemCache) error {
+func addAtprotoSource(ctx context.Context, _ *cobra.Command, store *db.Store, c *cache.FilesystemCache) error {
 	if err := atproto.IngestAtproto(ctx, atproto.Options{
 		DB:    store,
 		Cache: c,
@@ -146,7 +147,7 @@ func addAtprotoSource(ctx context.Context, cmd *cobra.Command, store *db.Store, 
 	}
 
 	if !quiet {
-		fmt.Fprintln(cmd.OutOrStdout(), "Ingested AT Protocol documentation")
+		p.PrintSuccess("Ingested AT Protocol documentation")
 	}
 	return nil
 }

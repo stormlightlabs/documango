@@ -67,15 +67,15 @@ func runCacheStatus(cmd *cobra.Command, args []string) error {
 	if err == nil {
 		gitCount := gitCache.Count()
 
-		fmt.Fprintf(cmd.OutOrStdout(), "Cache Directory: %s\n", cacheDir)
-		fmt.Fprintf(cmd.OutOrStdout(), "File Cache:      %s (%d files)\n", formatBytes(totalSize), fileCount)
+		p.PrintListItem("Cache Directory", p.FormatPath(cacheDir))
+		p.PrintListItem("File Cache", fmt.Sprintf("%s (%d files)", formatBytes(totalSize), fileCount))
 		if gitCount > 0 {
-			fmt.Fprintf(cmd.OutOrStdout(), "Git Repos:       %d tracked\n", gitCount)
+			p.PrintListItem("Git Repos", fmt.Sprintf("%d tracked", gitCount))
 		}
 	} else {
-		fmt.Fprintf(cmd.OutOrStdout(), "Cache Directory: %s\n", cacheDir)
-		fmt.Fprintf(cmd.OutOrStdout(), "Total Size:      %s\n", formatBytes(totalSize))
-		fmt.Fprintf(cmd.OutOrStdout(), "Entries:         %d\n", fileCount)
+		p.PrintListItem("Cache Directory", p.FormatPath(cacheDir))
+		p.PrintListItem("Total Size", formatBytes(totalSize))
+		p.PrintListItem("Entries", fmt.Sprintf("%d", fileCount))
 	}
 
 	return nil
@@ -195,7 +195,7 @@ func runCachePrune(cmd *cobra.Command, args []string) error {
 	}
 
 	if !quiet {
-		fmt.Fprintf(cmd.OutOrStdout(), "Pruned %d cache entries\n", count)
+		p.PrintSuccess(fmt.Sprintf("Pruned %d cache entries", count))
 	}
 
 	return nil
@@ -233,7 +233,7 @@ func runCacheClear(cmd *cobra.Command, args []string) error {
 			}
 		}
 		if !quiet {
-			fmt.Fprintf(cmd.OutOrStdout(), "Cleared %d cache entries\n", count)
+			p.PrintSuccess(fmt.Sprintf("Cleared %d cache entries", count))
 		}
 		return nil
 	}
@@ -243,7 +243,7 @@ func runCacheClear(cmd *cobra.Command, args []string) error {
 	}
 
 	if !quiet {
-		fmt.Fprintln(cmd.OutOrStdout(), "Cache cleared")
+		p.PrintSuccess("Cache cleared")
 	}
 
 	return nil
