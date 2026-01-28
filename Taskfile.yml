@@ -1,0 +1,20 @@
+version: "3"
+
+tasks:
+  build:
+    desc: Build documango into ./tmp/
+    cmds:
+      - mkdir -p ./tmp
+      - go build -o ./tmp/documango ./cmd/documango
+  test:
+    desc: Run Go tests
+    cmds:
+      - go test ./...
+  format:
+    desc: Format Go source code
+    cmds:
+      - gofmt -w cmd internal
+  vet:
+    desc: Run Go vet checks
+    cmds:
+      - go vet ./...

@@ -6,7 +6,7 @@ Core CLI and database infrastructure.
 
 - Define SQLite schema (documents, search_index, agent_context tables)
 - Implement FTS5 wrapper using `modernc.org/sqlite` (pure Go, no CGO)
-- Build CLI shell with cobra
+- Build CLI shell with fang (cobra) & lipgloss
 - Zstd compression/decompression for document blobs
 - Database creation, opening, and basic CRUD operations
 
@@ -39,21 +39,7 @@ Three documentation sources for AT Protocol ecosystem.
 
 **Exit Criteria**: Can ingest Lexicons, protocol specs, and developer tutorials from all three sources.
 
-## Milestone 4: TUI
-
-Interactive terminal interface.
-
-- Bubble Tea application structure with RootModel
-- SearchBubble with keystroke-triggered FTS5 queries
-- ListBubble for result navigation
-- DocBubble with Glamour markdown rendering
-- Custom stylesheet matching Dash aesthetics
-- Tab stack for multi-document browsing
-- Deep link handling within documents
-
-**Exit Criteria**: Full read-only documentation browsing experience in terminal.
-
-## Milestone 5: Hex.pm Ingestion (Elixir + Gleam)
+## Milestone 4: Hex.pm Ingestion (Elixir + Gleam)
 
 HTML-based ingestion for Hex packages.
 
@@ -67,7 +53,7 @@ HTML-based ingestion for Hex packages.
 
 **Exit Criteria**: Can ingest Elixir (e.g., Phoenix) and Gleam packages from Hex.pm.
 
-## Milestone 6: Rust Ingestion
+## Milestone 5: Rust Ingestion
 
 Dual-path ingestion strategy.
 
@@ -79,18 +65,33 @@ Dual-path ingestion strategy.
 
 **Exit Criteria**: Can ingest crates via either path and produce searchable documentation.
 
-## Milestone 7: GitHub Markdown
+## Milestone 6: GitHub Markdown
 
 Repository documentation ingestion.
 
 - GitHub API client with rate limiting
 - Raw content fetching for public repos
 - Repository tree traversal for markdown discovery
+    - Search repos for doc/, docs/, README, LICENSE, CHANGELOG, etc
 - Relative link resolution
 - Front matter extraction
 - Clone-based fallback for large repos
 
 **Exit Criteria**: Can ingest markdown documentation from GitHub repositories.
+
+## Milestone 7: TUI
+
+Interactive terminal interface.
+
+- Bubble Tea application structure with RootModel
+- SearchBubble with keystroke-triggered FTS5 queries
+- ListBubble for result navigation
+- DocBubble with Glamour markdown rendering
+- Custom stylesheet matching Dash aesthetics
+- Tab stack for multi-document browsing
+- Deep link handling within documents
+
+**Exit Criteria**: Full read-only documentation browsing experience in terminal.
 
 ## Milestone 8: Web Interface
 
