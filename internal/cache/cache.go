@@ -303,3 +303,9 @@ func StdlibKey(version, pkg string) string {
 func AtprotoKey(repo string) string {
 	return fmt.Sprintf("atproto/%s", repo)
 }
+
+// HexKey returns the cache key for a Hex.pm package at version.
+// Format: hex/packages/{package}@{version}
+func HexKey(pkg, version string) string {
+	return fmt.Sprintf("hex/packages/%s@%s", pkg, version)
+}

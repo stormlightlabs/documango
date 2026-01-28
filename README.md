@@ -27,7 +27,13 @@ Initialize a database:
 Ingest AT Protocol documentation:
 
 ```sh
-./tmp/documango add atproto atproto -d ./tmp/docs.usde
+./tmp/documango add atproto -d ./tmp/docs.usde
+```
+
+Ingest a Hex package (Elixir/Gleam):
+
+```sh
+./tmp/documango add hex gleam_stdlib -d ./tmp/docs.usde
 ```
 
 Search:
@@ -90,6 +96,7 @@ Configuration is stored in TOML format:
 - `documango add go <module>`: ingest Go module from proxy.golang.org
 - `documango add go --stdlib [-s <start>] [-m <max>]`: ingest Go stdlib packages
 - `documango add atproto`: ingest AT Protocol lexicons, specs, and docs
+- `documango add hex <package>`: ingest Elixir or Gleam package from Hex.pm
 
 </details>
 
@@ -179,6 +186,20 @@ Ingests three documentation sources from Bluesky's GitHub repositories:
 - **Lexicons**: JSON schemas converted to Markdown (`atproto/lexicon/*`)
 - **Protocol Specs**: Technical specifications from atproto-website (`atproto/spec/*`)
 - **Developer Docs**: Tutorials and guides from bsky-docs (`atproto/docs/*`)
+
+### Hex.pm (BEAM)
+
+Ingests documentation for BEAM (Elixir, Erlang, and Gleam) packages directly from Hex.pm.
+
+- **Gleam**: Parses `package-interface.json` to extract full type signatures, function signatures with labeled parameters, type definitions with constructors, and documentation strings. Generates comprehensive Markdown with Gleam syntax code blocks.
+- **Elixir/Erlang**: Extracts documentation and metadata from ExDoc's `search_data-*.js`.
+
+**Caching**: Documentation tarballs are cached in `~/.cache/documango/hex/packages/`.
+
+The packages are stored in the hex namespace with paths like:
+
+- `hex/phoenix/Phoenix.Controller`
+- `hex/gleam_stdlib/gleam/list`
 
 ## Data Model
 

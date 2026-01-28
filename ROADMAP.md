@@ -55,7 +55,7 @@ Persistent caching and improved command interface.
 
 **DoD**: Remote sources cached locally, new CLI commands functional.
 
-## Milestone 5: Hex.pm Ingestion (Elixir + Gleam)
+## [Done] Milestone 5: Hex.pm Ingestion (Elixir + Gleam)
 
 HTML-based ingestion for Hex packages.
 
@@ -69,6 +69,11 @@ HTML-based ingestion for Hex packages.
 
 **DoD**: Can ingest Elixir (e.g., Phoenix) and Gleam packages from Hex.pm.
 
+- Test with:
+    1. <https://hexdocs.pm/gleam_stdlib/>
+    2. <https://hexdocs.pm/phoenix/>
+    3. <https://hexdocs.pm/elixir/>
+
 ## Milestone 6: Rust Ingestion
 
 Dual-path ingestion strategy.
@@ -80,6 +85,11 @@ Dual-path ingestion strategy.
 - Path selection logic based on toolchain availability
 
 **DoD**: Can ingest crates via either path and produce searchable documentation.
+
+- Test with:
+    1. <https://docs.rs/pulldown-cmark/>
+    2. <https://docs.rs/tokio/>
+    3. <https://docs.rs/axum/>
 
 ## Milestone 7: GitHub Markdown
 

@@ -1,52 +1,76 @@
 # Gleam Ingestion Pipeline
 
-Gleam publishes to Hex.pm but uses its own documentation generator, not ExDoc. The HTML structure differs from Elixir packages.
+Gleam publishes to Hex.pm and includes a machine-readable `package-interface.json` file in its documentation tarballs. This structured JSON provides direct access to documentation and type information without HTML parsing.
 
 ## Source Acquisition
 
 Same as Elixir: `https://repo.hex.pm/docs/{package}-{version}.tar.gz`
 
-## HTML Structure Differences
+## Data Extraction
 
-Gleam's doc generator:
+The `package-interface.json` file is the primary data source. It contains:
 
-- Uses highlight.js with custom Gleam language definitions
-- Different CSS class conventions than ExDoc
-- Generates search index separately
-- Includes static assets (CSS, JS, fonts)
+- Package name, version, and Gleam version constraint
+- Modules with documentation strings
+- Functions with documentation, parameters (with labels and types), and return types
+- Types with documentation, constructors, and type parameters
+- Type aliases with their underlying types
+- Constants (if any)
 
-## Parsing Strategy
+### Type System Rendering
 
-Use Goquery with Gleam-specific selectors:
+Gleam's type expressions use a JSON structure with `kind` discriminators:
 
-- Module documentation structure
-- Function/type/constant definitions
-- Code blocks with Gleam syntax highlighting classes
+- `named`: Types like `List`, `Result`, `Option` with optional parameters
+- `variable`: Generic type variables (rendered as `a`, `b`, `c`, etc.)
+- `fn`: Function types with parameters and return type
+- `tuple`: Tuple types using `elements` array (rendered as `#(a, b)`)
 
-## Conversion
+Function signatures are reconstructed from this JSON into Gleam syntax.
 
-Strip highlight.js classes, produce standard fenced blocks:
+### Documentation String Format
 
-```gleam
-pub fn example() -> String
+The Gleam compiler exports documentation as either a single string or an array of strings. A custom JSON unmarshaler normalizes both formats into a concatenated string.
+
+## Document Generation
+
+Each module produces a comprehensive Markdown document containing:
+
+1. Module name as heading
+2. Module-level documentation
+3. Types section with full definitions including constructors
+4. Type aliases section with underlying type
+5. Functions section with signatures and documentation
+
+Example output:
+
+```markdown
+## Functions
+
+### map
+
+\`\`\`gleam
+fn map(List(a), with fn(a) -> b) -> List(b)
+\`\`\`
+
+Returns a new list containing only the elements...
 ```
 
-## Agent Context
+## Mapping to Unified Schema
 
-Gleam's type system is similar to ML languages. Capture:
+- **Documents Table**: Each module stored as a compressed Markdown document with full type signatures
+- **Search Index**: Module names, function names (prefixed with module), type names, and type aliases - all with signatures in search body
+- **Agent Context**: Full Gleam function/type signatures and first-line summaries
 
-- Function signatures with types
-- Type definitions
-- Module hierarchy
+## Not Extracted
 
-## Shared Infrastructure with Elixir
+- Implementation targets (Erlang/JavaScript compatibility flags)
+- Deprecation markers
+- Constants (the JSON field exists but is typically empty)
 
-- Same Hex.pm tarball download logic
-- Same html-to-markdown core library
-- Different selector mappings and post-processing
+A `search-data.js` file exists with pre-rendered content for Gleam's Lunr-based search, but `package-interface.json` provides better structured data.
 
 ## Dependencies
 
 - `repo.hex.pm` - Documentation tarballs
-- `goquery` - HTML parsing
-- `html-to-markdown` - Conversion library
+- `encoding/json` - Interface parsing

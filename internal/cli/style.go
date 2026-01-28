@@ -26,26 +26,39 @@ type palette struct {
 	Base0F lipgloss.Color
 }
 
-// Oxocarbon Dark Palette
-// Source: https://github.com/nyoom-engineering/oxoc
-var oxoc = palette{
-	Base00: lipgloss.Color("#161616"),
-	Base01: lipgloss.Color("#262626"),
-	Base02: lipgloss.Color("#393939"),
-	Base03: lipgloss.Color("#525252"),
-	Base04: lipgloss.Color("#dde1e6"),
-	Base05: lipgloss.Color("#f2f4f8"),
-	Base06: lipgloss.Color("#ffffff"),
-	Base07: lipgloss.Color("#08bdba"),
-	Base08: lipgloss.Color("#3ddbd9"),
-	Base09: lipgloss.Color("#78a9ff"),
-	Base0A: lipgloss.Color("#ee5396"),
-	Base0B: lipgloss.Color("#33b1ff"),
-	Base0C: lipgloss.Color("#ff7eb6"),
-	Base0D: lipgloss.Color("#42be65"),
-	Base0E: lipgloss.Color("#be95ff"),
-	Base0F: lipgloss.Color("#82cfff"),
-}
+var (
+	cyan   = lipgloss.Color("#08bdba")
+	teal   = lipgloss.Color("#3ddbd9")
+	blue1  = lipgloss.Color("#78a9ff")
+	pink   = lipgloss.Color("#ee5396")
+	green  = lipgloss.Color("#42be65")
+	purple = lipgloss.Color("#be95ff")
+	blue2  = lipgloss.Color("#33b1ff")
+	pink2  = lipgloss.Color("#ff7eb6")
+	blue3  = lipgloss.Color("#82cfff")
+
+	// Oxocarbon Dark Palette
+	//
+	// Source: https://github.com/nyoom-engineering/oxoc
+	oxoc = palette{
+		Base00: lipgloss.Color("#161616"),
+		Base01: lipgloss.Color("#262626"),
+		Base02: lipgloss.Color("#393939"),
+		Base03: lipgloss.Color("#525252"),
+		Base04: lipgloss.Color("#dde1e6"),
+		Base05: lipgloss.Color("#f2f4f8"),
+		Base06: lipgloss.Color("#ffffff"),
+		Base07: cyan,
+		Base08: teal,
+		Base09: blue1,
+		Base0A: pink,
+		Base0B: blue2,
+		Base0C: pink2,
+		Base0D: green,
+		Base0E: purple,
+		Base0F: blue3,
+	}
+)
 
 // Styles wraps the lipgloss styles for the application.
 type Styles struct {

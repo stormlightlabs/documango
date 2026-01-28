@@ -21,4 +21,4 @@ tasks:
   cmt:
     desc: Find inline comments in Go code
     cmds:
-      - rg -n --pcre2 '^\s*//(?![!/])' -g '*.go'
+      - rg -n --pcre2 '^\s*[^/\s].*(?<!:)//(?![!/])' -g "*.go"
