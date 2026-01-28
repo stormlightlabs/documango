@@ -16,6 +16,8 @@ require (
 
 require github.com/jedib0t/go-pretty/v6 v6.7.8
 
+require github.com/goccy/go-yaml v1.19.2
+
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect

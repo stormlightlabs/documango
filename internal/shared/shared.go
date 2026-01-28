@@ -3,6 +3,7 @@ package shared
 import (
 	"strings"
 
+	"github.com/stormlightlabs/documango/internal/codec"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -17,4 +18,14 @@ func FirstLine(s string) string {
 		return s
 	}
 	return s[:idx]
+}
+
+func Compress(body string) []byte {
+	compressed, _ := codec.Compress([]byte(body))
+	return compressed
+}
+
+func NormalizeLineEndings(s string) string {
+	s = strings.ReplaceAll(s, "\r\n", "\n")
+	return strings.ReplaceAll(s, "\r", "\n")
 }

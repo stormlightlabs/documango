@@ -17,7 +17,6 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/stormlightlabs/documango/internal/cache"
-	"github.com/stormlightlabs/documango/internal/codec"
 	"github.com/stormlightlabs/documango/internal/db"
 	"github.com/stormlightlabs/documango/internal/shared"
 )
@@ -369,7 +368,7 @@ func ingestGleam(ctx context.Context, tx *sql.Tx, pkgName string, interfacePath 
 		docID, err := db.InsertDocumentTx(ctx, tx, db.Document{
 			Path:   docPath,
 			Format: "markdown",
-			Body:   compress(md),
+			Body:   shared.Compress(md),
 			Hash:   db.HashBytes([]byte(md)),
 		})
 		if err != nil {
@@ -497,7 +496,7 @@ func ingestElixir(ctx context.Context, tx *sql.Tx, pkgName string, tmpDir string
 		docID, err := db.InsertDocumentTx(ctx, tx, db.Document{
 			Path:   docPath,
 			Format: "markdown",
-			Body:   compress(pageDoc),
+			Body:   shared.Compress(pageDoc),
 			Hash:   db.HashBytes([]byte(pageDoc)),
 		})
 		if err != nil {
@@ -533,11 +532,6 @@ func ingestElixir(ctx context.Context, tx *sql.Tx, pkgName string, tmpDir string
 	}
 
 	return nil
-}
-
-func compress(body string) []byte {
-	compressed, _ := codec.Compress([]byte(body))
-	return compressed
 }
 
 // renderGleamType converts a GleamTypeExpr to Gleam type syntax.

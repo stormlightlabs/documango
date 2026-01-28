@@ -165,8 +165,6 @@ func (c *FilesystemCache) Has(key string) bool {
 		return false
 	}
 
-	// For normal entries, check if the file exists.
-	// We skip this for _git_meta which is a virtual entry stored in the manifest.
 	if key != "_git_meta" {
 		path := filepath.Join(c.dir, entry.Path)
 		if _, err := os.Stat(path); err != nil {
@@ -314,4 +312,13 @@ func HexKey(pkg, version string) string {
 // Format: rust/crates/{crate}@{version}
 func RustCrateKey(crate, version string) string {
 	return fmt.Sprintf("rust/crates/%s@%s", crate, version)
+}
+
+// GithubRepoKey returns the cache key for a GitHub repository.
+// Format: github/repos/{owner}/{repo}@{branch}
+func GithubRepoKey(owner, repo, branch string) string {
+	if branch == "" {
+		return fmt.Sprintf("github/repos/%s/%s", owner, repo)
+	}
+	return fmt.Sprintf("github/repos/%s/%s@%s", owner, repo, branch)
 }

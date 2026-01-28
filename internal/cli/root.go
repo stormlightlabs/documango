@@ -32,6 +32,7 @@ It supports:
 - Go modules (go.dev/doc) & the standard library
 - AT Protocol specifications
 - Hex.pm docs for Elixir & Gleam packages
+- Github repository markdown files
 `,
 	SilenceUsage:  true,
 	SilenceErrors: true,

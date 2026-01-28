@@ -1,7 +1,8 @@
 <!-- markdownlint-disable MD033 -->
 # Documango
 
-Documango is a terminal-first documentation browser for Go, AT Protocol, and other ecosystems. It ingests source materials into a single SQLite database (`.usde`) with compressed Markdown, full-text search, and agent-friendly metadata.
+Documango is a terminal-first documentation browser for Go, Rust, AT Protocol, GitHub, and other ecosystems.
+It ingests source materials into a single SQLite database (`.usde`) with compressed Markdown, full-text search, and agent-friendly metadata.
 
 ## Requirements
 
@@ -36,6 +37,12 @@ Ingest a Hex package (Elixir/Gleam):
 ./tmp/documango add hex gleam_stdlib -d ./tmp/docs.usde
 ```
 
+Ingest GitHub repository documentation:
+
+```sh
+./tmp/documango add github folke/snacks.nvim -d ./tmp/docs.usde
+```
+
 Search:
 
 ```sh
@@ -62,8 +69,7 @@ Extract a section by heading:
 
 ## Usage
 
-<details>
-<summary>Configuration</summary>
+### Configuration
 
 Documango uses XDG Base Directory paths with `DOCUMANGO_HOME` override support:
 
@@ -77,8 +83,6 @@ Configuration is stored in TOML format:
 ./tmp/documango config set display.render_markdown true
 ./tmp/documango config edit
 ```
-
-</details>
 
 ### Commands
 
@@ -97,6 +101,8 @@ Configuration is stored in TOML format:
 - `documango add go --stdlib [-s <start>] [-m <max>]`: ingest Go stdlib packages
 - `documango add atproto`: ingest AT Protocol lexicons, specs, and docs
 - `documango add hex <package>`: ingest Elixir or Gleam package from Hex.pm
+- `documango add rust <crate>`: ingest Rust crate from crates.io
+- `documango add github <owner/repo>`: ingest Markdown documentation from GitHub repository
 
 </details>
 
@@ -157,9 +163,12 @@ Configuration is stored in TOML format:
 
 </details>
 
-## Ingesters
+## Data Layer
 
-### Go
+### Ingesters
+
+<details>
+<summary>Go</summary>
 
 Documango uses a single Go ingestion pipeline for both:
 
@@ -179,7 +188,10 @@ Go ingestion extracts:
 - FTS5 search entries (name, type, body)
 - Agent context (signatures + synopsis)
 
-### AT Protocol
+</details>
+
+<details>
+<summary>AT Protocol</summary>
 
 Ingests three documentation sources from Bluesky's GitHub repositories:
 
@@ -187,7 +199,10 @@ Ingests three documentation sources from Bluesky's GitHub repositories:
 - **Protocol Specs**: Technical specifications from atproto-website (`atproto/spec/*`)
 - **Developer Docs**: Tutorials and guides from bsky-docs (`atproto/docs/*`)
 
-### Hex.pm (BEAM)
+</details>
+
+<details>
+<summary>Hex.pm (BEAM)</summary>
 
 Ingests documentation for BEAM (Elixir, Erlang, and Gleam) packages directly from Hex.pm.
 
@@ -201,7 +216,29 @@ The packages are stored in the hex namespace with paths like:
 - `hex/phoenix/Phoenix.Controller`
 - `hex/gleam_stdlib/gleam/list`
 
-## Data Model
+</details>
+
+<details>
+<summary>GitHub</summary>
+
+Ingests Markdown documentation from GitHub repositories. Automatically discovers and processes all Markdown files including README, docs/ folders, and nested documentation.
+
+- **API mode**: For smaller repositories, fetches content via the GitHub Git Trees API and raw file URLs
+- **Clone mode**: Falls back to `git clone` for large repositories when the tree API returns truncated results
+- **Front matter**: Extracts title from YAML front matter (e.g., `title: My Doc`) or falls back to the first H1 heading
+- **Rate limiting**: Respects GitHub API rate limits with automatic retry and wait behavior
+
+**Caching**: Cloned repositories are cached in `~/.cache/documango/github/repos/` for reuse across ingestions.
+
+Documents are stored in the github namespace with paths like:
+
+- `github/folke/snacks.nvim/README.md`
+- `github/folke/snacks.nvim/docs/dashboard.md`
+- `github/changesets/changesets/docs/intro.md`
+
+</details>
+
+### Model
 
 Documentation is stored in a single SQLite database, called Unified Semantic Documentation Engine (`.usde`).
 

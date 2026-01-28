@@ -15,3 +15,5 @@
 - Elixir and Gleam package doc ingestion from Hex.pm, utilizing HTML parsing and html-to-markdown conversion.
 
 - Dual-path ingestion strategy for Rust crates, supporting both Rustdoc JSON parsing and a Docs.rs HTML fallback scraper.
+
+- Github repository markdown ingestion (API + Clone fallback)

@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/stormlightlabs/documango/internal/cache"
 	"github.com/stormlightlabs/documango/internal/db"
+	githubingest "github.com/stormlightlabs/documango/internal/ingest/github"
 	"github.com/stormlightlabs/documango/internal/ingest/atproto"
 	golangingest "github.com/stormlightlabs/documango/internal/ingest/golang"
 	"github.com/stormlightlabs/documango/internal/ingest/hexpm"
@@ -34,12 +36,14 @@ Supported source types:
   go       - Go module or standard library
   atproto  - AT Protocol specifications and documentation
   hex      - Elixir or Gleam package from Hex.pm
-  rust     - Rust crate from crates.io`,
+  rust     - Rust crate from crates.io
+  github   - GitHub repository markdown documentation`,
 		Example: `  documango add go golang.org/x/net
   documango add go --stdlib
   documango add atproto
   documango add hex gleam_stdlib
-  documango add rust pulldown-cmark`,
+  documango add rust pulldown-cmark
+  documango add github folke/snacks.nvim`,
 		Args:              cobra.MinimumNArgs(1),
 		RunE:              runAdd,
 		ValidArgsFunction: addSourceCompletion,
@@ -106,6 +110,8 @@ func runAdd(cmd *cobra.Command, args []string) error {
 		return addHexSource(ctx, cmd, store, source, c)
 	case "rust":
 		return addRustSource(ctx, cmd, store, source, c)
+	case "github":
+		return addGithubSource(ctx, cmd, store, source, c)
 	default:
 		return fmt.Errorf("unknown source type: %s", sourceType)
 	}
@@ -187,7 +193,7 @@ func addAtprotoSource(ctx context.Context, _ *cobra.Command, store *db.Store, c 
 
 func addSourceCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	if len(args) == 0 {
-		return []string{"go", "atproto", "hex", "rust"}, cobra.ShellCompDirectiveNoFileComp
+		return []string{"go", "atproto", "hex", "rust", "github"}, cobra.ShellCompDirectiveNoFileComp
 	}
 	return nil, cobra.ShellCompDirectiveNoFileComp
 }
@@ -208,6 +214,35 @@ func addRustSource(ctx context.Context, _ *cobra.Command, store *db.Store, sourc
 
 	if !quiet {
 		p.PrintSuccess(fmt.Sprintf("Ingested rust crate %s", p.FormatSymbol(source)))
+	}
+	return nil
+}
+
+func addGithubSource(ctx context.Context, _ *cobra.Command, store *db.Store, source string, c *cache.FilesystemCache) error {
+	if source == "" {
+		return errors.New("github owner/repo is required")
+	}
+
+	parts := strings.Split(source, "/")
+	if len(parts) < 2 {
+		return errors.New("github source must be in format 'owner/repo'")
+	}
+
+	owner := parts[0]
+	repo := parts[1]
+
+	if err := githubingest.IngestRepository(ctx, githubingest.Options{
+		Owner:  owner,
+		Repo:   repo,
+		Branch: addVersion,
+		DB:     store,
+		Cache:  c,
+	}); err != nil {
+		return err
+	}
+
+	if !quiet {
+		p.PrintSuccess(fmt.Sprintf("Ingested github repository %s", p.FormatSymbol(source)))
 	}
 	return nil
 }

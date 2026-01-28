@@ -2,20 +2,6 @@
 
 See [CHANGELOG](CHANGELOG.md) for completed work.
 
-## Milestone 7: GitHub Markdown
-
-Repository documentation ingestion.
-
-- GitHub API client with rate limiting
-- Raw content fetching for public repos
-- Repository tree traversal for markdown discovery
-    - Search repos for doc/, docs/, README, LICENSE, CHANGELOG, etc
-- Relative link resolution
-- Front matter extraction
-- Clone-based fallback for large repos
-
-**DoD**: Can ingest markdown documentation from GitHub repositories.
-
 ## Milestone 8: TUI
 
 Interactive terminal interface.
