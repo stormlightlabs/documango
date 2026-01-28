@@ -57,8 +57,17 @@ func runList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if listType != "" {
-		paths = filterPaths(paths, listType)
+	prefix := listType
+	if len(args) > 0 {
+		if prefix != "" {
+			prefix = prefix + "/" + args[0]
+		} else {
+			prefix = args[0]
+		}
+	}
+
+	if prefix != "" {
+		paths = filterPaths(paths, prefix)
 	}
 
 	if listCount {

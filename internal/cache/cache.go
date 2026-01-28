@@ -111,32 +111,37 @@ func (c *FilesystemCache) Put(key string, source string, reader io.Reader, ttl t
 		entry.ExpiresAt = time.Now().Add(ttl)
 	}
 
-	hash := sha256.New()
-	tmpFile := filepath.Join(c.dir, ".tmp_"+key)
-	defer os.Remove(tmpFile)
+	finalPath := filepath.Join(c.dir, key)
+	if err := os.MkdirAll(filepath.Dir(finalPath), 0o755); err != nil {
+		return nil, err
+	}
 
-	file, err := os.Create(tmpFile)
+	hash := sha256.New()
+	tmpFile, err := os.CreateTemp(c.dir, ".cache_tmp_*")
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	tmpName := tmpFile.Name()
+	defer os.Remove(tmpName)
 
-	multiWriter := io.MultiWriter(file, hash)
+	multiWriter := io.MultiWriter(tmpFile, hash)
 	size, err := io.Copy(multiWriter, reader)
 	if err != nil {
+		tmpFile.Close()
 		return nil, err
 	}
 
-	if err := file.Sync(); err != nil {
+	if err := tmpFile.Sync(); err != nil {
+		tmpFile.Close()
 		return nil, err
 	}
+	tmpFile.Close()
 
 	entry.Size = size
 	entry.Checksum = hex.EncodeToString(hash.Sum(nil))
 	entry.Path = key
 
-	finalPath := filepath.Join(c.dir, key)
-	if err := os.Rename(tmpFile, finalPath); err != nil {
+	if err := os.Rename(tmpName, finalPath); err != nil {
 		return nil, err
 	}
 
@@ -159,6 +164,17 @@ func (c *FilesystemCache) Has(key string) bool {
 		_ = c.Delete(key)
 		return false
 	}
+
+	// For normal entries, check if the file exists.
+	// We skip this for _git_meta which is a virtual entry stored in the manifest.
+	if key != "_git_meta" {
+		path := filepath.Join(c.dir, entry.Path)
+		if _, err := os.Stat(path); err != nil {
+			_ = c.Delete(key)
+			return false
+		}
+	}
+
 	return true
 }
 

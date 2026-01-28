@@ -61,7 +61,9 @@ func runInfo(cmd *cobra.Command, args []string) error {
 
 func getDocumentInfo(ctx context.Context, store *db.Store, path string) (int, int64, error) {
 	rows, err := store.DB().QueryContext(ctx,
-		`SELECT COUNT(DISTINCT symbol), SUM(LENGTH(signature)) FROM agent_context WHERE doc_id = (SELECT id FROM documents WHERE path = ?)`,
+		`SELECT COUNT(DISTINCT symbol), COALESCE(SUM(LENGTH(signature)), 0)
+		 FROM agent_context
+		 WHERE doc_id = (SELECT id FROM documents WHERE path = ?)`,
 		path,
 	)
 	if err != nil {

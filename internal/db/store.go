@@ -137,7 +137,7 @@ func InsertDocumentTx(ctx context.Context, tx *sql.Tx, doc Document) (int64, err
 	}
 	res, err := tx.ExecContext(
 		ctx,
-		`INSERT INTO documents (path, format, body, raw_html, hash) VALUES (?, ?, ?, ?, ?)`,
+		`INSERT OR REPLACE INTO documents (path, format, body, raw_html, hash) VALUES (?, ?, ?, ?, ?)`,
 		doc.Path, doc.Format, doc.Body, doc.RawHTML, doc.Hash,
 	)
 	if err != nil {
@@ -149,7 +149,7 @@ func InsertDocumentTx(ctx context.Context, tx *sql.Tx, doc Document) (int64, err
 func InsertSearchEntryTx(ctx context.Context, tx *sql.Tx, entry SearchEntry) error {
 	_, err := tx.ExecContext(
 		ctx,
-		`INSERT INTO search_index (name, type, body, doc_id) VALUES (?, ?, ?, ?)`,
+		`INSERT OR REPLACE INTO search_index (name, type, body, doc_id) VALUES (?, ?, ?, ?)`,
 		entry.Name, entry.Type, entry.Body, entry.DocID,
 	)
 	return err
@@ -170,7 +170,7 @@ func (s *Store) Search(ctx context.Context, query string, limit int) ([]SearchRe
 	}
 	rows, err := s.db.QueryContext(
 		ctx,
-		`SELECT name, type, doc_id, (CASE WHEN name = ? THEN 100 ELSE 0 END) + bm25(search_index) AS score
+		`SELECT name, type, doc_id, (CASE WHEN name = ? THEN 100 ELSE 0 END) - bm25(search_index, 5.0, 1.0, 1.0) AS score
 		 FROM search_index
 		 WHERE search_index MATCH ?
 		 ORDER BY score DESC

@@ -124,17 +124,14 @@ func ingestLexicons(ctx context.Context, tx *sql.Tx, root string) error {
 			return err
 		}
 
-		if err := db.InsertSearchEntryTx(ctx, tx, db.SearchEntry{
-			Name: lex.ID, Type: "Lexicon", Body: lex.ID, DocID: docID,
-		}); err != nil {
-			return err
+		// Use ID and any descriptions for search
+		searchBody := lex.ID
+		if def, ok := lex.Defs["main"]; ok && def.Description != "" {
+			searchBody += " " + def.Description
 		}
 
-		if err := db.InsertAgentContextTx(ctx, tx, db.AgentContext{
-			DocID:     docID,
-			Symbol:    lex.ID,
-			Signature: "lexicon " + lex.ID,
-			Summary:   "Lexicon definition for " + lex.ID,
+		if err := db.InsertSearchEntryTx(ctx, tx, db.SearchEntry{
+			Name: lex.ID, Type: "Lexicon", Body: searchBody, DocID: docID,
 		}); err != nil {
 			return err
 		}
@@ -184,16 +181,31 @@ func ingestSpecs(ctx context.Context, tx *sql.Tx, root string) error {
 		docPath = strings.Replace(docPath, "/page.mdx", "", 1)
 		docPath = strings.TrimSuffix(docPath, filepath.Ext(docPath))
 
+		// Normalize: remove specs/, articles/, guides/ from the path for cleaner UX
+		docPath = strings.Replace(docPath, "specs/", "", 1)
+		docPath = strings.Replace(docPath, "articles/", "", 1)
+		docPath = strings.Replace(docPath, "guides/", "", 1)
+
 		docID, err := insertDoc(ctx, tx, docPath, body)
 		if err != nil {
 			return err
 		}
 
 		name := filepath.Base(docPath)
+		// Include first 16KB of content in search index for better results
+		searchBody := name
+		if len(body) > 0 {
+			limit := 16384
+			if len(body) < limit {
+				limit = len(body)
+			}
+			searchBody = name + " " + body[:limit]
+		}
+
 		if err := db.InsertSearchEntryTx(ctx, tx, db.SearchEntry{
 			Name:  name,
 			Type:  "Spec",
-			Body:  name,
+			Body:  searchBody,
 			DocID: docID,
 		}); err != nil {
 			return err
@@ -227,10 +239,19 @@ func ingestDocs(ctx context.Context, tx *sql.Tx, root string) error {
 		}
 
 		name := filepath.Base(docPath)
+		searchBody := name
+		if len(body) > 0 {
+			limit := 16384
+			if len(body) < limit {
+				limit = len(body)
+			}
+			searchBody = name + " " + body[:limit]
+		}
+
 		if err := db.InsertSearchEntryTx(ctx, tx, db.SearchEntry{
 			Name:  name,
 			Type:  "Doc",
-			Body:  name,
+			Body:  searchBody,
 			DocID: docID,
 		}); err != nil {
 			return err

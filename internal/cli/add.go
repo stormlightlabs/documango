@@ -49,12 +49,15 @@ Supported source types:
 }
 
 func runAdd(cmd *cobra.Command, args []string) error {
-	if len(args) < 2 {
-		return errors.New("add requires a source type and source identifier")
+	sourceType := args[0]
+	var source string
+	if len(args) > 1 {
+		source = args[1]
 	}
 
-	sourceType := args[0]
-	source := args[1]
+	if sourceType != "atproto" && source == "" {
+		return errors.New("add requires a source identifier for " + sourceType)
+	}
 
 	dbPath, err := resolveDBPath()
 	if err != nil {
