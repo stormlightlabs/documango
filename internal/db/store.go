@@ -275,6 +275,21 @@ func (s *Store) EnsureSchema(ctx context.Context) error {
 	return nil
 }
 
+func (s *Store) GetSymbolContext(ctx context.Context, symbol string) (AgentContext, error) {
+	var entry AgentContext
+	if err := s.db.QueryRowContext(
+		ctx,
+		`SELECT doc_id, symbol, signature, summary FROM agent_context WHERE symbol = ?`,
+		symbol,
+	).Scan(&entry.DocID, &entry.Symbol, &entry.Signature, &entry.Summary); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return AgentContext{}, fmt.Errorf("symbol not found: %s", symbol)
+		}
+		return AgentContext{}, err
+	}
+	return entry, nil
+}
+
 // DB returns the underlying SQL database connection.
 func (s *Store) DB() *sql.DB {
 	return s.db

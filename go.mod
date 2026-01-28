@@ -19,6 +19,13 @@ require github.com/jedib0t/go-pretty/v6 v6.7.8
 require github.com/goccy/go-yaml v1.19.2
 
 require (
+	github.com/google/jsonschema-go v0.3.0 // indirect
+	github.com/modelcontextprotocol/go-sdk v1.2.0
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
+	golang.org/x/oauth2 v0.30.0 // indirect
+)
+
+require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect

@@ -50,17 +50,24 @@ func Execute() error {
 		newInfoCommand(),
 		newCacheCommand(),
 		newConfigCommand(),
+		newMCPCommand(),
 	)
 	return rootCmd.Execute()
 }
 
 func loadConfig() {
 	var err error
-	cfg, err = config.Load()
-	if err != nil {
+	if cfg, err = config.Load(); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
 		cfg = config.DefaultConfig()
 	}
+}
+
+func resolveDBPath() (string, error) {
+	if dbPath != "" {
+		return config.ResolveDatabasePath(dbPath)
+	}
+	return config.GetDefaultDatabase()
 }
 
 func init() {
@@ -77,11 +84,4 @@ func init() {
 			lipgloss.SetColorProfile(termenv.Ascii)
 		}
 	})
-}
-
-func resolveDBPath() (string, error) {
-	if dbPath != "" {
-		return config.ResolveDatabasePath(dbPath)
-	}
-	return config.GetDefaultDatabase()
 }

@@ -150,6 +150,8 @@ Configuration is stored in TOML format:
 - `documango config set <key> <value>`: set configuration value
 - `documango config edit`: open in $EDITOR
 - `documango config path`: print config file path
+- `-q, --quiet`: suppress non-error output
+- `--no-color`: disable colored output
 
 </details>
 
@@ -162,6 +164,41 @@ Configuration is stored in TOML format:
 - `--no-color`: disable colored output
 
 </details>
+
+<details>
+<summary>MCP (Model Context Protocol)</summary>
+
+- `documango mcp serve [--stdio] [--http ADDR]`: start the MCP server
+    - `--stdio`: use standard input/output (for Claude Desktop, etc.)
+    - `--http`: use streamable HTTP transport on the given address
+- `-d, --database PATH`: specify the database to serve
+
+</details>
+
+## Model Context Protocol (MCP)
+
+Documango exposes its documentation through the [Model Context Protocol](https://modelcontextprotocol.io), allowing AI agents to search and read documentation programmatically.
+
+### Tools
+
+1. `search_docs(query, package)`: Search for documentation symbols or guides.
+2. `read_doc(path)`: Retrieve the full decompressed Markdown content of a document.
+3. `get_symbol_context(symbol)`: Retrieve a minimal token signature and summary for a symbol.
+
+### Integration
+
+To use with Claude Desktop or Antigravity, add the following to your configuration:
+
+```json
+{
+  "mcpServers": {
+    "documango": {
+      "command": "/path/to/documango",
+      "args": ["mcp", "serve", "--stdio"]
+    }
+  }
+}
+```
 
 ## Data Layer
 

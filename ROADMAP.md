@@ -2,7 +2,34 @@
 
 See [CHANGELOG](CHANGELOG.md) for completed work.
 
-## Milestone 8: TUI
+## Milestone 8: MCP Server
+
+AI agent integration. No dependencies on TUI or Web interfaces.
+
+- MCP server implementation using official [Go SDK](https://github.com/modelcontextprotocol/go-sdk) v1.2.0+
+- `search_docs` tool with FTS5 trigram search and BM25 ranking
+- `read_doc` tool with zstd decompression
+- `get_symbol_context` tool for minimal token responses
+- Stdio transport (subprocess mode for Claude Desktop/CLI)
+- HTTP transport (network mode via StreamableHTTPHandler)
+- CLI subcommand: `documango mcp serve`
+- Verify with Claude Desktop, Claude CLI, & Antigravity
+
+**DoD**: AI agent can search and retrieve documentation programmatically.
+
+## Milestone 9: Web Interface
+
+Browser-based reading.
+
+- HTTP server with document routing
+- Goldmark Markdown-to-HTML rendering with CSS injection
+- Search API endpoint with JSON responses
+- Dark terminal aesthetic: Geist for headings, Geist Mono for body
+- Readability-focused layout
+
+**DoD**: Can browse and search documentation in web browser.
+
+## Milestone 10: TUI
 
 Interactive terminal interface.
 
@@ -16,32 +43,7 @@ Interactive terminal interface.
 
 **DoD**: Full read-only documentation browsing experience in terminal.
 
-## Milestone 9: Web Interface
-
-Browser-based reading.
-
-- HTTP server with document routing
-- Goldmark Markdown-to-HTML rendering
-    - CSS stylesheet injection
-- Search API endpoint
-- Websocket TUI synchronization
-
-**DoD**: Can browse documentation in web browser with TUI sync.
-
-## Milestone 10: MCP Server
-
-AI agent integration.
-
-- MCP server implementation using official [Go SDK](https://github.com/modelcontextprotocol/go-sdk)
-- `search_docs` tool with trigram search
-- `read_doc` tool with decompression
-- `get_symbol_context` tool for minimal token responses
-- Stdio and HTTP transport modes
-- Verify with Claude Desktop, Claude CLI, & Antigravity
-
-**DoD**: AI agent can search and retrieve documentation programmatically.
-
-## Milestone 11: Polish
+## Milestone 11: Endgame
 
 Production readiness.
 
@@ -50,5 +52,6 @@ Production readiness.
 - Cross-platform testing
 - Documentation and examples
 - Goreleaser integration/action
+- TUI-Web synchronization via Websocket
 
 **DoD**: Reliable, deployable tool ready for daily use.
