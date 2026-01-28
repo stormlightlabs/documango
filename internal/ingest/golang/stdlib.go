@@ -21,6 +21,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/charmbracelet/log"
 
+	"github.com/stormlightlabs/documango/internal/cache"
 	"github.com/stormlightlabs/documango/internal/db"
 )
 
@@ -34,6 +35,7 @@ type StdlibOptions struct {
 	Version     string
 	Start       string
 	MaxPackages int
+	Cache       *cache.FilesystemCache
 }
 
 func IngestStdlib(ctx context.Context, opts StdlibOptions) error {
@@ -85,7 +87,7 @@ func IngestStdlib(ctx context.Context, opts StdlibOptions) error {
 				return err
 			}
 
-			if err := fetchArchive(ctx, fetch, version, pkg, pkgDir); err != nil {
+			if err := fetchArchive(ctx, fetch, version, pkg, pkgDir, opts.Cache); err != nil {
 				return fmt.Errorf("%s: %w", pkg, err)
 			}
 
@@ -135,7 +137,7 @@ func extractStdlibVersion(doc *goquery.Document) (string, error) {
 	})
 	if version == "" {
 		text := doc.Text()
-		re := regexp.MustCompile(`Version:\s*(go[0-9.]+)`) // fallback
+		re := regexp.MustCompile(`Version:\s*(go[0-9.]+)`)
 		matches := re.FindStringSubmatch(text)
 		if len(matches) > 1 {
 			version = matches[1]
@@ -194,7 +196,16 @@ func filterStdlibPackages(packages []string, start string, max int) []string {
 	return filtered
 }
 
-func fetchArchive(ctx context.Context, fetch *fetcher, version, pkg, destDir string) error {
+func fetchArchive(ctx context.Context, fetch *fetcher, version, pkg, destDir string, c *cache.FilesystemCache) error {
+	cacheKey := cache.StdlibKey(version, pkg)
+
+	if c != nil {
+		if cachedPath, _, err := c.Get(cacheKey); err == nil {
+			log.Info("using cached stdlib package", "package", pkg, "version", version)
+			return extractTarGz(cachedPath, destDir)
+		}
+	}
+
 	url := fmt.Sprintf(gitilesArchive, version, pkg)
 	resp, err := fetch.get(ctx, url)
 	if err != nil {
@@ -202,7 +213,50 @@ func fetchArchive(ctx context.Context, fetch *fetcher, version, pkg, destDir str
 	}
 	defer resp.Body.Close()
 
-	gz, err := gzip.NewReader(resp.Body)
+	tmpFile, err := os.CreateTemp("", "documango-stdlib-*.tar.gz")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpFile.Name())
+
+	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
+		_ = tmpFile.Close()
+		return err
+	}
+	if _, err := tmpFile.Seek(0, 0); err != nil {
+		_ = tmpFile.Close()
+		return err
+	}
+
+	if c != nil {
+		_, err := c.Put(cacheKey, url, tmpFile, 0)
+		_ = tmpFile.Close()
+		if err != nil {
+			log.Warn("failed to cache stdlib package", "package", pkg, "err", err)
+		}
+		if cachedPath, _, err := c.Get(cacheKey); err == nil {
+			return extractTarGz(cachedPath, destDir)
+		}
+	} else {
+		if err := tmpFile.Close(); err != nil {
+			return err
+		}
+	}
+
+	if _, err := tmpFile.Seek(0, 0); err != nil {
+		return err
+	}
+	return extractTarGz(tmpFile.Name(), destDir)
+}
+
+func extractTarGz(archivePath, destDir string) error {
+	f, err := os.Open(archivePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	gz, err := gzip.NewReader(f)
 	if err != nil {
 		return err
 	}

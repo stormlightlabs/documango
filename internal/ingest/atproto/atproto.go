@@ -12,12 +12,15 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
+
+	"github.com/stormlightlabs/documango/internal/cache"
 	"github.com/stormlightlabs/documango/internal/codec"
 	"github.com/stormlightlabs/documango/internal/db"
 )
 
 type Options struct {
-	DB *db.Store
+	DB    *db.Store
+	Cache *cache.FilesystemCache
 }
 
 func IngestAtproto(ctx context.Context, opts Options) error {
@@ -34,11 +37,37 @@ func IngestAtproto(ctx context.Context, opts Options) error {
 	}
 
 	for name, url := range repos {
-		log.Info("cloning repository", "repo", name)
+		log.Info("fetching repository", "repo", name)
 		dest := filepath.Join(tmpDir, name)
-		cmd := exec.CommandContext(ctx, "git", "clone", "--depth", "1", url, dest)
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to clone %s: %w", name, err)
+
+		if opts.Cache != nil {
+			cacheKey := cache.AtprotoKey(name)
+			gitCache, err := cache.NewGitCache(opts.Cache.Dir())
+			if err == nil {
+				if commitSHA, ok := gitCache.GetCommit(cacheKey); ok {
+					log.Info("using cached commit", "repo", name, "commit", commitSHA)
+					if err := cache.ShallowClone(url, commitSHA, dest); err == nil {
+						continue
+					}
+					log.Warn("shallow clone failed, falling back to full clone", "repo", name, "err", err)
+				}
+			}
+
+			if err := gitClone(ctx, url, dest); err != nil {
+				return fmt.Errorf("failed to clone %s: %w", name, err)
+			}
+
+			commitSHA, err := cache.GetRepoCommit(dest)
+			if err == nil {
+				log.Info("caching commit SHA", "repo", name, "commit", commitSHA)
+				_ = gitCache.PutCommit(cacheKey, url, commitSHA, 0)
+			} else {
+				log.Warn("failed to get commit SHA", "repo", name, "err", err)
+			}
+		} else {
+			if err := gitClone(ctx, url, dest); err != nil {
+				return fmt.Errorf("failed to clone %s: %w", name, err)
+			}
 		}
 	}
 
@@ -60,6 +89,11 @@ func IngestAtproto(ctx context.Context, opts Options) error {
 
 		return nil
 	})
+}
+
+func gitClone(ctx context.Context, url, dest string) error {
+	cmd := exec.CommandContext(ctx, "git", "clone", "--depth", "1", url, dest)
+	return cmd.Run()
 }
 
 func ingestLexicons(ctx context.Context, tx *sql.Tx, root string) error {

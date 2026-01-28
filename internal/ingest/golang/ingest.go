@@ -25,6 +25,7 @@ import (
 	"github.com/princjef/gomarkdoc/logger"
 	"golang.org/x/mod/module"
 
+	"github.com/stormlightlabs/documango/internal/cache"
 	"github.com/stormlightlabs/documango/internal/codec"
 	"github.com/stormlightlabs/documango/internal/db"
 )
@@ -33,6 +34,7 @@ type Options struct {
 	Module  string
 	Version string
 	DB      *db.Store
+	Cache   *cache.FilesystemCache
 }
 
 type latestResponse struct {
@@ -56,7 +58,7 @@ func IngestModule(ctx context.Context, opts Options) error {
 		}
 	}
 
-	root, cleanup, err := downloadModuleZip(ctx, opts.Module, version)
+	root, cleanup, err := downloadModuleZip(ctx, opts.Module, version, opts.Cache)
 	if err != nil {
 		return err
 	}
@@ -110,7 +112,37 @@ func fetchLatestVersion(ctx context.Context, modulePath string) (string, error) 
 	return payload.Version, nil
 }
 
-func downloadModuleZip(ctx context.Context, modulePath, version string) (string, func(), error) {
+func downloadModuleZip(ctx context.Context, modulePath, version string, c *cache.FilesystemCache) (string, func(), error) {
+	cacheKey := cache.ModuleKey(modulePath, version)
+
+	if c != nil {
+		if cachedPath, entry, err := c.Get(cacheKey); err == nil {
+			log.Info("using cached module", "module", modulePath, "version", version, "path", cachedPath)
+			extractDir, err := os.MkdirTemp("", "documango-module-")
+			if err != nil {
+				return "", nil, err
+			}
+			if err := unzip(cachedPath, extractDir); err != nil {
+				_ = os.RemoveAll(extractDir)
+				return "", nil, err
+			}
+			root := extractDir
+			moduleDir := filepath.Join(extractDir, filepath.Base(entry.Path))
+			if info, err := os.Stat(moduleDir); err == nil && info.IsDir() {
+				root = moduleDir
+			} else {
+				entries, err := os.ReadDir(extractDir)
+				if err == nil && len(entries) == 1 && entries[0].IsDir() {
+					root = filepath.Join(extractDir, entries[0].Name())
+				}
+			}
+			cleanup := func() {
+				_ = os.RemoveAll(extractDir)
+			}
+			return root, cleanup, nil
+		}
+	}
+
 	escaped, err := module.EscapePath(modulePath)
 	if err != nil {
 		return "", nil, err
@@ -128,32 +160,66 @@ func downloadModuleZip(ctx context.Context, modulePath, version string) (string,
 	if resp.StatusCode != http.StatusOK {
 		return "", nil, fmt.Errorf("module proxy error: %s", resp.Status)
 	}
-	zipFile, err := os.CreateTemp("", "documango-module-*.zip")
+
+	tmpFile, err := os.CreateTemp("", "documango-module-*.zip")
 	if err != nil {
 		return "", nil, err
 	}
-	if _, err := io.Copy(zipFile, resp.Body); err != nil {
-		_ = zipFile.Close()
-		_ = os.Remove(zipFile.Name())
+	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
 		return "", nil, err
 	}
-	if err := zipFile.Close(); err != nil {
-		_ = os.Remove(zipFile.Name())
+	if _, err := tmpFile.Seek(0, 0); err != nil {
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
 		return "", nil, err
+	}
+
+	if c != nil {
+		_, err := c.Put(cacheKey, url, tmpFile, 0)
+		_ = tmpFile.Close()
+		if err != nil {
+			log.Warn("failed to cache module", "module", modulePath, "err", err)
+		}
+		if cachedPath, _, err := c.Get(cacheKey); err == nil {
+			_ = os.Remove(tmpFile.Name())
+			tmpFile, err = os.Open(cachedPath)
+			if err != nil {
+				return "", nil, err
+			}
+			defer tmpFile.Close()
+		}
+	} else {
+		if err := tmpFile.Close(); err != nil {
+			_ = os.Remove(tmpFile.Name())
+			return "", nil, err
+		}
+	}
+
+	zipPath := tmpFile.Name()
+	if c == nil {
+		defer os.Remove(zipPath)
 	}
 
 	extractDir, err := os.MkdirTemp("", "documango-module-")
 	if err != nil {
-		_ = os.Remove(zipFile.Name())
+		if c == nil {
+			_ = os.Remove(zipPath)
+		}
 		return "", nil, err
 	}
 
-	if err := unzip(zipFile.Name(), extractDir); err != nil {
-		_ = os.Remove(zipFile.Name())
+	if err := unzip(zipPath, extractDir); err != nil {
 		_ = os.RemoveAll(extractDir)
+		if c == nil {
+			_ = os.Remove(zipPath)
+		}
 		return "", nil, err
 	}
-	_ = os.Remove(zipFile.Name())
+	if c == nil {
+		_ = os.Remove(zipPath)
+	}
 
 	root := extractDir
 	moduleDir := filepath.Join(extractDir, escaped+"@"+version)

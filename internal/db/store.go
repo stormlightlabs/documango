@@ -257,3 +257,8 @@ func (s *Store) EnsureSchema(ctx context.Context) error {
 	}
 	return nil
 }
+
+// DB returns the underlying SQL database connection.
+func (s *Store) DB() *sql.DB {
+	return s.db
+}

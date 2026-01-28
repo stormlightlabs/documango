@@ -1,12 +1,13 @@
 <!-- markdownlint-disable MD033 -->
 # Documango
 
-Documango is a terminal-first documentation browser for Go, Elixir, Rust, and other languages. It ingests source materials into a single SQLite database (`.usde`) with compressed Markdown, full-text search, and agent-friendly metadata.
+Documango is a terminal-first documentation browser for Go, AT Protocol, and other ecosystems. It ingests source materials into a single SQLite database (`.usde`) with compressed Markdown, full-text search, and agent-friendly metadata.
 
 ## Requirements
 
 - Go 1.24+ (module declares go 1.24.5)
 - `rg` (ripgrep) optional for section extraction; falls back to `grep`
+- Git for AT Protocol ingestion
 
 ## Quick Start
 
@@ -17,74 +18,150 @@ go mod tidy
 task build
 ```
 
-Create a database/docset:
+Initialize a database:
 
 ```sh
-./tmp/documango db init -d ./tmp/docs.usde
+./tmp/documango init -d ./tmp/docs.usde
 ```
 
-Ingest a single Go stdlib package (e.g., `net/http`):
+Ingest AT Protocol documentation:
 
 ```sh
-./tmp/documango ingest go -d ./tmp/docs.usde --stdlib -s net/http -m 1
+./tmp/documango add atproto atproto -d ./tmp/docs.usde
 ```
 
 Search:
 
 ```sh
-./tmp/documango search -d ./tmp/docs.usde -l 10 Client
+./tmp/documango search -d ./tmp/docs.usde -l 10 "repo"
 ```
 
 Read a document (raw markdown):
 
 ```sh
-./tmp/documango doc -d ./tmp/docs.usde go/net/http
+./tmp/documango read -d ./tmp/docs.usde atproto/lexicon/com.atproto.repo.createRecord
 ```
 
 Read a document (rendered with Glamour):
 
 ```sh
-./tmp/documango doc -d ./tmp/docs.usde -r -w 80 go/net/http
+./tmp/documango read -d ./tmp/docs.usde -r -w 80 atproto/lexicon/com.atproto.repo.createRecord
 ```
 
 Extract a section by heading:
 
 ```sh
-./tmp/documango doc section -d ./tmp/docs.usde -q "type Client" -r -w 80 go/net/http
+./tmp/documango read section -d ./tmp/docs.usde -q "Definition" -r atproto/lexicon/com.atproto.repo.createRecord
 ```
 
-## Commands
+## Usage
 
-### Database
+<details>
+<summary>Configuration</summary>
 
-- `documango db init -d <path>`: create a `.usde` database
-- `documango db add -d <path> -p <doc-path> -f <file>`: add a markdown file
+Documango uses XDG Base Directory paths with `DOCUMANGO_HOME` override support:
 
-### Search
+- **macOS**: `~/Library/Application Support/documango/`
+- **Linux**: `~/.local/share/documango/` (data), `~/.config/documango/` (config), `~/.cache/documango/` (cache)
 
-- `documango search -d <path> -l <limit> <query>`
+Configuration is stored in TOML format:
 
-### Read
+```sh
+./tmp/documango config show
+./tmp/documango config set display.render_markdown true
+./tmp/documango config edit
+```
 
-- `documango doc -d <path> [--render|-r] [--width|-w N] <doc-path>`
-- `documango doc section -d <path> -q <heading> [--rg|--gr] [--render|-r] [--width|-w N] <doc-path>`
+</details>
 
-### Ingest
+### Commands
 
-- `documango ingest go -d <path> [-v <version>] <module>`
-- `documango ingest go -d <path> --stdlib [-v <go1.x.y>] [-s <start>] [-m <max>]`
+<details>
+<summary>Database</summary>
+
+- `documango init [database-name]`: create a new `.usde` database
+- `documango init -p /path/to/db.usde`: create at explicit path
+
+</details>
+
+<details>
+<summary>Add (Ingest)</summary>
+
+- `documango add go <module>`: ingest Go module from proxy.golang.org
+- `documango add go --stdlib [-s <start>] [-m <max>]`: ingest Go stdlib packages
+- `documango add atproto`: ingest AT Protocol lexicons, specs, and docs
+
+</details>
+
+<details>
+<summary>Search</summary>
+
+- `documango search [-l N] [-t TYPE] [-f FORMAT] <query>`
+    - Formats: `table` (default), `json`, `paths`
+    - Types: `Func`, `Type`, `Package`, `Lexicon`, etc.
+
+</details>
+
+<details>
+<summary>Read</summary>
+
+- `documango read [-r] [-w N] [-s SECTION] <path>`: read full document
+- `documango read section -q <heading> [-r] [-w N] <path>`: extract section by heading
+    - Flags: `--rg` (force ripgrep), `--gr` (force grep)
+
+</details>
+
+<details>
+<summary>List & Info</summary>
+
+- `documango list [--type PREFIX] [--tree] [--count]`: list all documentation paths
+- `documango info <path>`: show document metadata
+
+</details>
+
+<details>
+<summary>Cache</summary>
+
+- `documango cache status`: show cache size and entry count
+- `documango cache list [PREFIX]`: list cached items
+- `documango cache prune [--age N]`: remove entries older than N days
+- `documango cache clear [--type TYPE]`: clear cache
+
+</details>
+
+<details>
+<summary>Config</summary>
+
+- `documango config show`: display current configuration
+- `documango config get <key>`: get configuration value
+- `documango config set <key> <value>`: set configuration value
+- `documango config edit`: open in $EDITOR
+- `documango config path`: print config file path
+
+</details>
+
+<details>
+<summary>Global Flags</summary>
+
+- `-d, --database PATH`: database path (default: XDG data directory)
+- `-v, --verbose`: enable verbose output
+- `-q, --quiet`: suppress non-error output
+- `--no-color`: disable colored output
+
+</details>
 
 ## Ingesters
 
-<details>
-<summary><strong>Go</strong></summary>
+### Go
 
 Documango uses a single Go ingestion pipeline for both:
 
 - Go modules via `proxy.golang.org`
 - Go standard library via `pkg.go.dev` (directory list) + `go.googlesource.com` (archive fetch)
 
-The standard library is **not** a separate docset. It is stored in the same Go namespace with paths like:
+**Caching**: Module zips and stdlib tarballs are cached indefinitely in `~/.cache/documango/` to avoid re-fetching.
+
+The standard library is stored in the Go namespace with paths like:
 
 - `go/net/http`
 - `go/crypto/tls`
@@ -92,30 +169,29 @@ The standard library is **not** a separate docset. It is stored in the same Go n
 Go ingestion extracts:
 
 - Markdown docs via `gomarkdoc`
-- FTS5 search entries
+- FTS5 search entries (name, type, body)
 - Agent context (signatures + synopsis)
 
-</details>
+### AT Protocol
 
-## Taskfile
+Ingests three documentation sources from Bluesky's GitHub repositories:
 
-- `task build`: build into `./tmp/`
-- `task test`: run `go test ./...`
-- `task format`: run `gofmt -w cmd internal`
-- `task vet`: run `go vet ./...`
+- **Lexicons**: JSON schemas converted to Markdown (`atproto/lexicon/*`)
+- **Protocol Specs**: Technical specifications from atproto-website (`atproto/spec/*`)
+- **Developer Docs**: Tutorials and guides from bsky-docs (`atproto/docs/*`)
 
 ## Data Model
 
 Documentation is stored in a single SQLite database, called Unified Semantic Documentation Engine (`.usde`).
 
 <details>
-<summary>SQLite schema overview</summary>
+<summary>SQLite Schema</summary>
 
 Documango stores all documentation in a single SQLite database (`.usde`). The design is intentionally simple and optimized for fast local search and cheap retrieval:
 
-- `documents` holds compressed Markdown blobs, keyed by a virtual path (e.g., `go/net/http`).
-- `search_index` is an FTS5 virtual table (trigram tokenizer) that supports fast substring search and ranking.
-- `agent_context` stores low‑token summaries and signatures for fast AI retrieval without decompressing full docs.
+- `documents` holds compressed Markdown blobs, keyed by a virtual path (e.g., `go/net/http`)
+- `search_index` is an FTS5 virtual table (trigram tokenizer) that supports fast substring search and ranking
+- `agent_context` stores low‑token summaries and signatures for fast AI retrieval without decompressing full docs
 
 ```mermaid
 erDiagram
@@ -151,4 +227,10 @@ erDiagram
 ## Notes
 
 - Stdlib ingestion can be rate-limited by upstream. Use `-s`/`-m` to ingest in batches.
-- The `doc section` command searches headings and returns the section until the next same-or-higher heading level.
+- The `read section` command searches headings and returns the section until the next same-or-higher heading level.
+- Cache is stored in:
+    - `~/.cache/documango/` (Linux)
+    - `~/Library/Caches/documango/` (macOS)
+- Default database is created in:
+    - `~/.local/share/documango/default.usde` (Linux)
+    - `~/Library/Application Support/documango/default.usde` (macOS)

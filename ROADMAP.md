@@ -1,6 +1,6 @@
 # Roadmap
 
-## Milestone 1: Foundation
+## [Done] Milestone 1: Foundation
 
 Core CLI and database infrastructure.
 
@@ -10,9 +10,9 @@ Core CLI and database infrastructure.
 - Zstd compression/decompression for document blobs
 - Database creation, opening, and basic CRUD operations
 
-**Exit Criteria**: Can create `.usde` database, insert documents, and run FTS5 queries.
+**DoD**: Can create `.usde` database, insert documents, and run FTS5 queries.
 
-## Milestone 2: Go Ingestion
+## [Done] Milestone 2: Go Ingestion
 
 First complete ingestion pipeline.
 
@@ -24,9 +24,9 @@ First complete ingestion pipeline.
 - Anchor injection for deep linking
 - Populate all three tables from Go module source
 
-**Exit Criteria**: Can ingest a Go module (e.g., `net/http`) and produce searchable documentation.
+**DoD**: Can ingest a Go module (e.g., `net/http`) and produce searchable documentation.
 
-## Milestone 3: Atproto Ingestion
+## [Done] Milestone 3: Atproto Ingestion
 
 Three documentation sources for AT Protocol ecosystem.
 
@@ -37,9 +37,25 @@ Three documentation sources for AT Protocol ecosystem.
 - Unified namespace: `atproto/lexicon/`, `atproto/spec/`, `atproto/docs/`
 - Raw schema storage in agent_context for Lexicons
 
-**Exit Criteria**: Can ingest Lexicons, protocol specs, and developer tutorials from all three sources.
+**Definition of Done (DoD)**: Can ingest Lexicons, protocol specs, and developer tutorials from all three sources.
 
-## Milestone 4: Hex.pm Ingestion (Elixir + Gleam)
+## [Done] Milestone 4: Storage Layer & CLI Redesign
+
+Persistent caching and improved command interface.
+
+- XDG Base Directory compliance with `DOCUMANGO_HOME` override
+- Cache layer for remote sources (module zips, stdlib tarballs, git clones)
+- Cache manifest with ETags, timestamps, and checksums for invalidation
+- Fetch-through pattern wrapping existing network operations
+- CLI restructure: `init`, `add`, `search`, `read`, `list`, `info`, `cache`, `config`
+- POSIX-compliant flags with consistent global options (`-d`, `-v`, `-q`)
+- Output format options: table, JSON, paths
+- Configuration file support (TOML) for defaults and preferences
+- Standard exit codes and stream conventions
+
+**DoD**: Remote sources cached locally, new CLI commands functional.
+
+## Milestone 5: Hex.pm Ingestion (Elixir + Gleam)
 
 HTML-based ingestion for Hex packages.
 
@@ -51,9 +67,9 @@ HTML-based ingestion for Hex packages.
 - sidebar_items.json parsing for arity
 - Typespec extraction
 
-**Exit Criteria**: Can ingest Elixir (e.g., Phoenix) and Gleam packages from Hex.pm.
+**DoD**: Can ingest Elixir (e.g., Phoenix) and Gleam packages from Hex.pm.
 
-## Milestone 5: Rust Ingestion
+## Milestone 6: Rust Ingestion
 
 Dual-path ingestion strategy.
 
@@ -63,9 +79,9 @@ Dual-path ingestion strategy.
 - Docs.rs HTML fallback scraper
 - Path selection logic based on toolchain availability
 
-**Exit Criteria**: Can ingest crates via either path and produce searchable documentation.
+**DoD**: Can ingest crates via either path and produce searchable documentation.
 
-## Milestone 6: GitHub Markdown
+## Milestone 7: GitHub Markdown
 
 Repository documentation ingestion.
 
@@ -77,9 +93,9 @@ Repository documentation ingestion.
 - Front matter extraction
 - Clone-based fallback for large repos
 
-**Exit Criteria**: Can ingest markdown documentation from GitHub repositories.
+**DoD**: Can ingest markdown documentation from GitHub repositories.
 
-## Milestone 7: TUI
+## Milestone 8: TUI
 
 Interactive terminal interface.
 
@@ -91,9 +107,9 @@ Interactive terminal interface.
 - Tab stack for multi-document browsing
 - Deep link handling within documents
 
-**Exit Criteria**: Full read-only documentation browsing experience in terminal.
+**DoD**: Full read-only documentation browsing experience in terminal.
 
-## Milestone 8: Web Interface
+## Milestone 9: Web Interface
 
 Browser-based reading.
 
@@ -103,9 +119,9 @@ Browser-based reading.
 - Search API endpoint
 - Websocket TUI synchronization
 
-**Exit Criteria**: Can browse documentation in web browser with TUI sync.
+**DoD**: Can browse documentation in web browser with TUI sync.
 
-## Milestone 9: MCP Server
+## Milestone 10: MCP Server
 
 AI agent integration.
 
@@ -116,16 +132,15 @@ AI agent integration.
 - Stdio and HTTP transport modes
 - Verify with Claude Desktop
 
-**Exit Criteria**: AI agent can search and retrieve documentation programmatically.
+**DoD**: AI agent can search and retrieve documentation programmatically.
 
-## Milestone 10: Polish
+## Milestone 11: Polish
 
 Production readiness.
 
-- Caching layer for slow network operations
 - Incremental updates using SHA256 checksums
 - Error handling and recovery
 - Cross-platform testing
 - Documentation and examples
 
-**Exit Criteria**: Reliable, deployable tool ready for daily use.
+**DoD**: Reliable, deployable tool ready for daily use.
