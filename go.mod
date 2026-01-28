@@ -14,6 +14,8 @@ require (
 	modernc.org/sqlite v1.44.3
 )
 
+require github.com/jedib0t/go-pretty/v6 v6.7.8
+
 require (
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect

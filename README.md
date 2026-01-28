@@ -243,6 +243,12 @@ erDiagram
   }
 ```
 
+Search scoring details:
+
+- Exact match bonus: +100 if the symbol name exactly matches the query
+- BM25 score: Subtracted from the bonus (BM25 returns lower values for better matches)
+- Result: Higher scores = more relevant
+
 </details>
 
 ## Notes

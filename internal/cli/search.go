@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 
 	"github.com/stormlightlabs/documango/internal/db"
 )
 
 var (
-	searchLimit  int
-	searchType   string
-	searchFormat string
-	searchFirst  bool
+	searchLimit   int
+	searchType    string
+	searchFormat  string
+	searchFirst   bool
+	searchPackage string
 )
 
 func newSearchCommand() *cobra.Command {
@@ -36,6 +38,7 @@ receiving a boost.`,
 	cmd.Flags().StringVarP(&searchType, "type", "t", "", "Filter by symbol type (e.g., Func, Type, Package)")
 	cmd.Flags().StringVarP(&searchFormat, "format", "f", "table", "Output format (table, json, paths)")
 	cmd.Flags().BoolVarP(&searchFirst, "first", "1", false, "Return only the top result")
+	cmd.Flags().StringVarP(&searchPackage, "package", "p", "", "Filter by package path prefix")
 
 	return cmd
 }
@@ -62,8 +65,13 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		limit = 1
 	}
 
+	packagePrefix := searchPackage
+	if packagePrefix != "" && !strings.HasPrefix(packagePrefix, "go/") {
+		packagePrefix = "go/" + packagePrefix
+	}
+
 	ctx := context.Background()
-	results, err := store.Search(ctx, query, limit)
+	results, err := store.SearchPackage(ctx, query, packagePrefix, limit)
 	if err != nil {
 		return err
 	}
@@ -84,9 +92,27 @@ func runSearch(cmd *cobra.Command, args []string) error {
 }
 
 func outputSearchTable(cmd *cobra.Command, results []db.SearchResult) error {
-	for _, res := range results {
-		fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%d\t%.4f\n", p.FormatSymbol(res.Name), res.Type, res.DocID, res.Score)
+	if len(results) == 0 {
+		return nil
 	}
+
+	maxScore := results[0].Score
+	for _, res := range results {
+		if res.Score > maxScore {
+			maxScore = res.Score
+		}
+	}
+
+	t := table.NewWriter()
+	t.SetOutputMirror(cmd.OutOrStdout())
+	t.AppendHeader(table.Row{"Name", "Type", "Doc ID", "Score (BM25 Relevance)"})
+
+	for _, res := range results {
+		t.AppendRow(table.Row{res.Name, res.Type, res.DocID, fmt.Sprintf("%.4f", res.Score)})
+	}
+
+	t.SetStyle(table.StyleRounded)
+	t.Render()
 	return nil
 }
 

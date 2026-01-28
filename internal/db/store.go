@@ -165,18 +165,35 @@ func InsertAgentContextTx(ctx context.Context, tx *sql.Tx, entry AgentContext) e
 }
 
 func (s *Store) Search(ctx context.Context, query string, limit int) ([]SearchResult, error) {
+	return s.SearchPackage(ctx, query, "", limit)
+}
+
+func (s *Store) SearchPackage(ctx context.Context, query, packagePrefix string, limit int) ([]SearchResult, error) {
 	if limit <= 0 {
 		limit = 20
 	}
-	rows, err := s.db.QueryContext(
-		ctx,
-		`SELECT name, type, doc_id, (CASE WHEN name = ? THEN 100 ELSE 0 END) - bm25(search_index, 5.0, 1.0, 1.0) AS score
-		 FROM search_index
-		 WHERE search_index MATCH ?
-		 ORDER BY score DESC
-		 LIMIT ?`,
-		query, query, limit,
-	)
+
+	var sqlQuery string
+	var args []any
+
+	if packagePrefix != "" {
+		sqlQuery = `SELECT name, type, search_index.doc_id, (CASE WHEN name = ? THEN 100 ELSE 0 END) - bm25(search_index, 5.0, 1.0, 1.0) AS score
+			FROM search_index
+			JOIN documents ON search_index.doc_id = documents.id
+			WHERE search_index MATCH ? AND documents.path LIKE ?
+			ORDER BY score DESC
+			LIMIT ?`
+		args = []any{query, query, packagePrefix + "%", limit}
+	} else {
+		sqlQuery = `SELECT name, type, doc_id, (CASE WHEN name = ? THEN 100 ELSE 0 END) - bm25(search_index, 5.0, 1.0, 1.0) AS score
+			FROM search_index
+			WHERE search_index MATCH ?
+			ORDER BY score DESC
+			LIMIT ?`
+		args = []any{query, query, limit}
+	}
+
+	rows, err := s.db.QueryContext(ctx, sqlQuery, args...)
 	if err != nil {
 		return nil, err
 	}

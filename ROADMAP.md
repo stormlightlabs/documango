@@ -36,7 +36,7 @@ Browser-based reading.
 
 - HTTP server with document routing
 - Goldmark Markdown-to-HTML rendering
-- CSS stylesheet injection
+    - CSS stylesheet injection
 - Search API endpoint
 - Websocket TUI synchronization
 
@@ -46,12 +46,12 @@ Browser-based reading.
 
 AI agent integration.
 
-- MCP server implementation using official Go SDK
+- MCP server implementation using official [Go SDK](https://github.com/modelcontextprotocol/go-sdk)
 - `search_docs` tool with trigram search
 - `read_doc` tool with decompression
 - `get_symbol_context` tool for minimal token responses
 - Stdio and HTTP transport modes
-- Verify with Claude Desktop
+- Verify with Claude Desktop, Claude CLI, & Antigravity
 
 **DoD**: AI agent can search and retrieve documentation programmatically.
 
@@ -63,5 +63,6 @@ Production readiness.
 - Error handling and recovery
 - Cross-platform testing
 - Documentation and examples
+- Goreleaser integration/action
 
 **DoD**: Reliable, deployable tool ready for daily use.

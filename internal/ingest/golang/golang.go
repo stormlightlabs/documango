@@ -1,3 +1,10 @@
+// package golang contains the ingestion pipeline for Go docs.
+//
+// TODO: Add a Go-specific filter option to exclude unexported symbols from the
+// search index. I think Go devs know the difference between exported (uppercase)
+// and unexported (lowercase) symbols, so including both is useful for context.
+// However, for a more focused public API view, we could add a flag to filter
+// out unexported symbols.
 package golang
 
 import (
@@ -563,6 +570,7 @@ func IngestPackageDir(ctx context.Context, tx *sql.Tx, importPath, workDir, pkgD
 	astPkg := pkgs[pkgNames[0]]
 
 	pkgDoc := doc.New(astPkg, importPath, doc.AllDecls)
+
 	md, err := generateMarkdown(pkgDoc, workDir, pkgDir)
 	if err != nil {
 		return err
