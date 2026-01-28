@@ -24,8 +24,15 @@ var rootCmd = &cobra.Command{
 	Use:   "documango",
 	Short: "A terminal-first documentation browser",
 	Long: `Documango is a terminal-first documentation browser that ingests,
-stores, and searches technical documentation from various sources including
-Go modules, Go stdlib, and AT Protocol specifications.`,
+stores, and searches technical documentation from various sources.
+
+It supports:
+
+- Rust crates (docs.rs)
+- Go modules (go.dev/doc) & the standard library
+- AT Protocol specifications
+- Hex.pm docs for Elixir & Gleam packages
+`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }

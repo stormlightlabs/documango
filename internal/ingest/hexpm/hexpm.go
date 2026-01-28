@@ -68,21 +68,21 @@ type GleamModule struct {
 }
 
 type GleamTypeDef struct {
-	Documentation DocString           `json:"documentation"`
-	Deprecation   *string             `json:"deprecation"`
-	Parameters    int                 `json:"parameters"`
-	Constructors  []GleamConstructor  `json:"constructors"`
+	Documentation DocString          `json:"documentation"`
+	Deprecation   *string            `json:"deprecation"`
+	Parameters    int                `json:"parameters"`
+	Constructors  []GleamConstructor `json:"constructors"`
 }
 
 type GleamConstructor struct {
-	Name       string        `json:"name"`
-	Parameters []GleamParam  `json:"parameters"`
+	Name       string       `json:"name"`
+	Parameters []GleamParam `json:"parameters"`
 }
 
 type GleamAlias struct {
-	Documentation DocString   `json:"documentation"`
-	Deprecation   *string     `json:"deprecation"`
-	Parameters    int         `json:"parameters"`
+	Documentation DocString     `json:"documentation"`
+	Deprecation   *string       `json:"deprecation"`
+	Parameters    int           `json:"parameters"`
 	Alias         GleamTypeExpr `json:"alias"`
 }
 
@@ -93,10 +93,10 @@ type GleamConstant struct {
 }
 
 type GleamFunction struct {
-	Documentation DocString       `json:"documentation"`
-	Deprecation   *string         `json:"deprecation"`
-	Parameters    []GleamParam    `json:"parameters"`
-	Return        GleamTypeExpr   `json:"return"`
+	Documentation DocString     `json:"documentation"`
+	Deprecation   *string       `json:"deprecation"`
+	Parameters    []GleamParam  `json:"parameters"`
+	Return        GleamTypeExpr `json:"return"`
 }
 
 type GleamParam struct {
@@ -153,13 +153,11 @@ func IngestPackage(ctx context.Context, opts Options) error {
 	log.Info("hex package ingest starting", "package", opts.Package, "version", version)
 
 	return opts.DB.WithTx(ctx, func(tx *sql.Tx) error {
-		// Priority 1: Gleam package-interface.json
 		interfacePath := filepath.Join(tmpDir, "package-interface.json")
 		if _, err := os.Stat(interfacePath); err == nil {
 			return ingestGleam(ctx, tx, opts.Package, interfacePath)
 		}
 
-		// Priority 2: Elixir search_data-*.js
 		return ingestElixir(ctx, tx, opts.Package, tmpDir)
 	})
 }
@@ -324,14 +322,12 @@ func ingestGleam(ctx context.Context, tx *sql.Tx, pkgName string, interfacePath 
 	for modName, mod := range iface.Modules {
 		docPath := "hex/" + pkgName + "/" + modName
 
-		// Build comprehensive module documentation
 		var docBuilder strings.Builder
 		docBuilder.WriteString("# " + modName + "\n\n")
 		if modDoc := mod.Documentation.String(); modDoc != "" {
 			docBuilder.WriteString(modDoc + "\n\n")
 		}
 
-		// Types section
 		if len(mod.Types) > 0 {
 			docBuilder.WriteString("## Types\n\n")
 			for typeName, td := range mod.Types {
@@ -344,7 +340,6 @@ func ingestGleam(ctx context.Context, tx *sql.Tx, pkgName string, interfacePath 
 			}
 		}
 
-		// Type aliases section
 		if len(mod.TypeAliases) > 0 {
 			docBuilder.WriteString("## Type Aliases\n\n")
 			for aliasName, ta := range mod.TypeAliases {
@@ -358,7 +353,6 @@ func ingestGleam(ctx context.Context, tx *sql.Tx, pkgName string, interfacePath 
 			}
 		}
 
-		// Functions section
 		if len(mod.Functions) > 0 {
 			docBuilder.WriteString("## Functions\n\n")
 			for fnName, fn := range mod.Functions {
@@ -382,7 +376,6 @@ func ingestGleam(ctx context.Context, tx *sql.Tx, pkgName string, interfacePath 
 			return err
 		}
 
-		// Insert module search entry
 		if err := db.InsertSearchEntryTx(ctx, tx, db.SearchEntry{
 			Name:  modName,
 			Type:  "Module",
@@ -392,7 +385,6 @@ func ingestGleam(ctx context.Context, tx *sql.Tx, pkgName string, interfacePath 
 			return err
 		}
 
-		// Insert functions with full signatures
 		for fnName, fn := range mod.Functions {
 			symbol := modName + "." + fnName
 			sig := renderGleamSignature(fnName, fn)
@@ -416,7 +408,6 @@ func ingestGleam(ctx context.Context, tx *sql.Tx, pkgName string, interfacePath 
 			}
 		}
 
-		// Insert types with constructors
 		for typeName, td := range mod.Types {
 			symbol := modName + "." + typeName
 			sig := renderGleamTypeDef(typeName, td)
@@ -440,7 +431,6 @@ func ingestGleam(ctx context.Context, tx *sql.Tx, pkgName string, interfacePath 
 			}
 		}
 
-		// Insert type aliases
 		for aliasName, ta := range mod.TypeAliases {
 			symbol := modName + "." + aliasName
 			vars := make(map[int]string)

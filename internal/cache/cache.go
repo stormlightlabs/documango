@@ -309,3 +309,9 @@ func AtprotoKey(repo string) string {
 func HexKey(pkg, version string) string {
 	return fmt.Sprintf("hex/packages/%s@%s", pkg, version)
 }
+
+// RustCrateKey returns the cache key for a Rust crate at version.
+// Format: rust/crates/{crate}@{version}
+func RustCrateKey(crate, version string) string {
+	return fmt.Sprintf("rust/crates/%s@%s", crate, version)
+}
