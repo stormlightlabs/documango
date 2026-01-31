@@ -51,6 +51,7 @@ func Execute() error {
 		newCacheCommand(),
 		newConfigCommand(),
 		newMCPCommand(),
+		newWebCommand(),
 	)
 	return rootCmd.Execute()
 }

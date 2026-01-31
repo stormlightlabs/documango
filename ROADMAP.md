@@ -4,13 +4,13 @@ See [CHANGELOG](CHANGELOG.md) for completed work.
 
 ## Milestone 9: Web Interface
 
-Browser-based reading.
+Browser-based documentation reader with Monobrutalist design system.
 
-- HTTP server with document routing
-- Goldmark Markdown-to-HTML rendering with CSS injection
-- Search API endpoint with JSON responses
-- Dark terminal aesthetic: Geist for headings, Geist Mono for body
-- Readability-focused layout
+- HTTP server with document routing (`/doc/{path}`, `/search`, `/api/search`)
+- Goldmark Markdown-to-HTML rendering with custom Chroma theme
+- Search API endpoint with JSON responses and snippet highlighting
+- Monobrutalist CSS: Geist/Geist Mono typography, 2px borders, hard shadows, dark terminal palette
+- Embedded templates and static assets via `//go:embed`
 
 **DoD**: Can browse and search documentation in web browser.
 
