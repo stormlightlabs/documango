@@ -1,0 +1,148 @@
+.doc-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.doc-header {
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-4);
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+.doc-header h1 {
+  margin-bottom: 0;
+}
+
+.doc-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: var(--space-8);
+}
+
+@media (max-width: 768px) {
+  .doc-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .doc-toc {
+    order: -1;
+    margin-bottom: var(--space-6);
+  }
+}
+
+.doc-toc {
+  position: sticky;
+  top: var(--space-4);
+  height: fit-content;
+  max-height: calc(100vh - var(--space-8));
+  overflow-y: auto;
+}
+
+.toc-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-secondary);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: var(--border-width) solid var(--border);
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-item {
+  margin-bottom: var(--space-2);
+}
+
+.toc-item a {
+  color: var(--fg-secondary);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  display: block;
+  padding: var(--space-1) 0;
+  transition: color 100ms ease;
+}
+
+.toc-item a:hover {
+  color: var(--accent);
+}
+
+.toc-level-2 {
+  font-weight: 600;
+}
+
+.toc-level-3 {
+  padding-left: var(--space-4);
+}
+
+.doc-content {
+  min-width: 0;
+}
+
+.doc-content h2 {
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: var(--border-width) solid var(--border);
+}
+
+.doc-content h2:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.doc-content h3 {
+  margin-top: var(--space-8);
+}
+
+.doc-content .anchor {
+  color: var(--fg-muted);
+  text-decoration: none;
+  margin-left: var(--space-2);
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+
+.doc-content h2:hover .anchor,
+.doc-content h3:hover .anchor,
+.doc-content h4:hover .anchor {
+  opacity: 1;
+}
+
+.doc-content .anchor:hover {
+  color: var(--accent);
+}
+
+.doc-content pre {
+  background-color: var(--bg-tertiary);
+  border: var(--border-width) solid var(--border);
+  padding: var(--space-4);
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+}
+
+.doc-content pre code {
+  background: none;
+  padding: 0;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.doc-content img {
+  max-width: 100%;
+  height: auto;
+  border: var(--border-width) solid var(--border);
+}
+
+.doc-content hr {
+  border: none;
+  border-top: var(--border-width) solid var(--border);
+  margin: var(--space-8) 0;
+}

@@ -1,0 +1,36 @@
+.error-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-4);
+}
+
+.error-content {
+  text-align: center;
+  padding: var(--space-12) var(--space-8);
+}
+
+.error-code {
+  font-family: var(--font-heading);
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  margin-bottom: var(--space-4);
+}
+
+.error-title {
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-4);
+}
+
+.error-message {
+  color: var(--fg-secondary);
+  margin-bottom: var(--space-8);
+}
+
+.error-actions {
+  display: flex;
+  gap: var(--space-4);
+  justify-content: center;
+  flex-wrap: wrap;
+}
