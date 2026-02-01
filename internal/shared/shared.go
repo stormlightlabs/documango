@@ -13,11 +13,11 @@ func Capitalize(s string) string {
 }
 
 func FirstLine(s string) string {
-	idx := strings.Index(s, "\n")
-	if idx == -1 {
+	before, _, ok := strings.Cut(s, "\n")
+	if !ok {
 		return s
 	}
-	return s[:idx]
+	return before
 }
 
 func Compress(body string) []byte {
@@ -36,4 +36,27 @@ func TruncateText(text string, maxLen int) string {
 		return text
 	}
 	return text[:maxLen] + "..."
+}
+
+// Itoa converts an int to string without strconv.
+func Itoa(i int) string {
+	if i == 0 {
+		return "0"
+	}
+	buf := make([]byte, 0, 10)
+	neg := i < 0
+	if neg {
+		i = -i
+	}
+	for i > 0 {
+		buf = append(buf, byte('0'+i%10))
+		i /= 10
+	}
+	if neg {
+		buf = append(buf, '-')
+	}
+	for i, j := 0, len(buf)-1; i < j; i, j = i+1, j-1 {
+		buf[i], buf[j] = buf[j], buf[i]
+	}
+	return string(buf)
 }

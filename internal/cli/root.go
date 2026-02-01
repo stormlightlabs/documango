@@ -52,6 +52,7 @@ func Execute() error {
 		newConfigCommand(),
 		newMCPCommand(),
 		newWebCommand(),
+		newTuiCommand(),
 	)
 	return rootCmd.Execute()
 }
@@ -79,10 +80,6 @@ func init() {
 
 	if noColor {
 		rootCmd.CompletionOptions.DisableDescriptions = true
+		cobra.OnInitialize(func() { lipgloss.SetColorProfile(termenv.Ascii) })
 	}
-	cobra.OnInitialize(func() {
-		if noColor {
-			lipgloss.SetColorProfile(termenv.Ascii)
-		}
-	})
 }
