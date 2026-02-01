@@ -1,0 +1,44 @@
+{{template "base.html" .}}
+
+{{define "title"}}{{.Title}} | Documango{{end}}
+
+{{define "content"}}
+<article class="doc-page">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        {{range .Breadcrumbs}}
+        <span class="breadcrumb-item">
+            {{if .URL}}
+            <a href="{{.URL}}">{{.Label}}</a>
+            {{else}}
+            {{.Label}}
+            {{end}}
+        </span>
+        {{end}}
+    </nav>
+
+    <header class="doc-header">
+        <h1>{{.Title}}</h1>
+    </header>
+
+    <div class="doc-layout">
+        {{if .TOC}}
+        <aside class="doc-toc" role="complementary">
+            <nav aria-label="Table of Contents">
+                <h2 class="toc-title">Contents</h2>
+                <ul class="toc-list">
+                    {{range .TOC}}
+                    <li class="toc-item toc-level-{{.Level}}">
+                        <a href="#{{.ID}}">{{.Text}}</a>
+                    </li>
+                    {{end}}
+                </ul>
+            </nav>
+        </aside>
+        {{end}}
+
+        <div class="doc-content">
+            {{.Content}}
+        </div>
+    </div>
+</article>
+{{end}}
