@@ -109,13 +109,33 @@ func (s *Server) fetchDocument(ctx context.Context, docPath string) (db.Document
 	return doc, nil
 }
 
+// ErrorPageData holds data for error templates.
+type ErrorPageData struct {
+	Code    int
+	Title   string
+	Message string
+}
+
+func newErrorPageData(c int, t, m string) ErrorPageData {
+	return ErrorPageData{Code: c, Title: t, Message: m}
+}
+
 // handleDocError handles errors when fetching or rendering documents.
 func (s *Server) handleDocError(w http.ResponseWriter, _ *http.Request, err error) {
 	if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "no rows") {
-		http.Error(w, "Document not found", http.StatusNotFound)
+		s.renderErrorPage(w, http.StatusNotFound, "Document Not Found", "The requested document could not be found.")
 		return
 	}
-	http.Error(w, "Failed to load document", http.StatusInternalServerError)
+	s.renderErrorPage(w, http.StatusInternalServerError, "Server Error", "An error occurred while loading the document.")
+}
+
+// renderErrorPage renders an error page with the given status code and message.
+func (s *Server) renderErrorPage(w http.ResponseWriter, code int, title, message string) {
+	w.WriteHeader(code)
+	data := newErrorPageData(code, title, message)
+	if err := s.renderTemplate(w, "error.html", data); err != nil {
+		http.Error(w, message, code)
+	}
 }
 
 // extractTitle extracts a title from the document or uses the path.

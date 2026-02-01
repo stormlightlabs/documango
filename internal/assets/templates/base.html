@@ -9,13 +9,17 @@
 </head>
 
 <body>
-    <header>
-        <nav>
-            <a href="/">Index</a>
-            <a href="/search">Search</a>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <header role="banner">
+        <nav class="nav container" role="navigation" aria-label="Main navigation">
+            <a href="/" class="nav-brand" aria-label="Documango Home">Documango</a>
+            <div class="nav-links">
+                <a href="/" class="nav-link{{if eq .ActiveNav "index"}} active{{end}}">Index</a>
+                <a href="/search" class="nav-link{{if eq .ActiveNav "search"}} active{{end}}">Search</a>
+            </div>
         </nav>
     </header>
-    <main>
+    <main id="main-content" role="main">
         {{block "content" .}}{{end}}
     </main>
     <script src="/static/search.js"></script>

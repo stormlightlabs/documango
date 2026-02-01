@@ -1,0 +1,17 @@
+{{template "base.html" .}}
+
+{{define "title"}}{{if eq .Code 404}}Not Found{{else}}Error{{end}} | Documango{{end}}
+
+{{define "content"}}
+<div class="error-page">
+    <div class="error-content card card-static">
+        <div class="error-code">{{.Code}}</div>
+        <h1 class="error-title">{{.Title}}</h1>
+        <p class="error-message">{{.Message}}</p>
+        <div class="error-actions">
+            <a href="/" class="btn">Go Home</a>
+            <a href="/search" class="btn btn-secondary">Search</a>
+        </div>
+    </div>
+</div>
+{{end}}
