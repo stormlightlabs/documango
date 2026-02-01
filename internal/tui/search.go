@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -27,6 +28,7 @@ type searchErrMsg struct{ err error }
 // SearchModel is the search input component.
 type SearchModel struct {
 	input       textinput.Model
+	spinner     spinner.Model
 	store       *db.Store
 	debounce    time.Duration
 	lastQuery   string
@@ -40,13 +42,16 @@ func NewSearchModel(store *db.Store) SearchModel {
 	input := textinput.New()
 	input.Placeholder = "Search documentation..."
 	input.Focus()
+	s := spinner.New()
+	s.Spinner = spinner.Dot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#22c55e"))
 	d := 150 * time.Millisecond
-	return SearchModel{input: input, store: store, debounce: d}
+	return SearchModel{input: input, spinner: s, store: store, debounce: d}
 }
 
 // Init returns the initial command.
 func (m SearchModel) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(textinput.Blink, m.spinner.Tick)
 }
 
 // Update handles messages.
@@ -81,6 +86,14 @@ func (m SearchModel) Update(msg tea.Msg) (SearchModel, tea.Cmd) {
 			return m, m.performSearch(msg.query)
 		}
 		return m, nil
+
+	case spinner.TickMsg:
+		if m.searching {
+			var cmd tea.Cmd
+			m.spinner, cmd = m.spinner.Update(msg)
+			return m, cmd
+		}
+		return m, nil
 	}
 
 	return m, nil
@@ -92,7 +105,7 @@ func (m SearchModel) View() string {
 	if m.err != nil {
 		status = errorStyle.Render(" Search failed: " + m.err.Error())
 	} else if m.searching {
-		status = dimStyle.Render(" Searching...")
+		status = m.spinner.View() + " Searching..."
 	} else if m.resultCount > 0 {
 		status = accentStyle.Render(" " + shared.Itoa(m.resultCount) + " results")
 	}

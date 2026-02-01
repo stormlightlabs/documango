@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -61,6 +62,7 @@ func NewLink(i int, t, txt string) Link {
 type DocModel struct {
 	store    *db.Store
 	viewport viewport.Model
+	spinner  spinner.Model
 	content  string
 	path     string
 	links    []Link
@@ -72,12 +74,15 @@ type DocModel struct {
 // NewDocModel creates a new document model without loading content.
 func NewDocModel(s *db.Store) DocModel {
 	v := viewport.New(0, 0)
-	return DocModel{store: s, viewport: v, loading: false}
+	sp := spinner.New()
+	sp.Spinner = spinner.Dot
+	sp.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#22c55e"))
+	return DocModel{store: s, viewport: v, spinner: sp, loading: false}
 }
 
 // Init returns the initial command.
 func (m DocModel) Init() tea.Cmd {
-	return nil
+	return m.spinner.Tick
 }
 
 // LoadDocument returns a command to load a document by ID.
@@ -150,26 +155,15 @@ func (m DocModel) renderMarkdown(markdown string) (string, error) {
 			},
 		},
 		H4: ansi.StyleBlock{
-			StylePrimitive: ansi.StylePrimitive{
-				Bold:        boolPtr(true),
-				BlockPrefix: "\n",
-			},
+			StylePrimitive: ansi.StylePrimitive{Bold: boolPtr(true), BlockPrefix: "\n"},
 		},
 		H5: ansi.StyleBlock{
-			StylePrimitive: ansi.StylePrimitive{
-				Bold:        boolPtr(true),
-				BlockPrefix: "\n",
-			},
+			StylePrimitive: ansi.StylePrimitive{Bold: boolPtr(true), BlockPrefix: "\n"},
 		},
 		H6: ansi.StyleBlock{
-			StylePrimitive: ansi.StylePrimitive{
-				Bold:        boolPtr(true),
-				BlockPrefix: "\n",
-			},
+			StylePrimitive: ansi.StylePrimitive{Bold: boolPtr(true), BlockPrefix: "\n"},
 		},
-		Text: ansi.StylePrimitive{
-			Color: stringPtr("#fafafa"),
-		},
+		Text: ansi.StylePrimitive{Color: stringPtr("#fafafa")},
 		BlockQuote: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
 				Color:       stringPtr("#737373"),
@@ -285,6 +279,14 @@ func (m DocModel) Update(msg tea.Msg) (DocModel, tea.Cmd) {
 		m.viewport.Width = msg.Width
 		m.viewport.Height = msg.Height - 3
 		return m, nil
+
+	case spinner.TickMsg:
+		if m.loading {
+			var cmd tea.Cmd
+			m.spinner, cmd = m.spinner.Update(msg)
+			return m, cmd
+		}
+		return m, nil
 	}
 
 	m.viewport, cmd = m.viewport.Update(msg)
@@ -298,7 +300,10 @@ func (m DocModel) View() string {
 	}
 
 	if m.loading {
-		return dimStyle.Render("Loading document...")
+		return lipgloss.JoinVertical(lipgloss.Left,
+			m.spinner.View(),
+			dimStyle.Render(" Loading document..."),
+		)
 	}
 
 	if m.content == "" {

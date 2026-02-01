@@ -1,6 +1,9 @@
 package tui
 
 import (
+	"context"
+
+	"github.com/charmbracelet/bubbles/help"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
@@ -21,19 +24,28 @@ type RootModel struct {
 	store    *db.Store
 	mode     appMode
 	quitting bool
+	showHelp bool
 	search   SearchModel
 	list     ListModel
 	doc      DocModel
+	tabs     TabBar
+	help     help.Model
+	keys     keyBindings
 }
 
 // NewRootModel creates a new root application model.
 func NewRootModel(store *db.Store) RootModel {
+	h := help.New()
+	h.ShowAll = true
 	return RootModel{
 		store:  store,
 		mode:   modeSearch,
 		search: NewSearchModel(store),
 		list:   NewListModel(),
 		doc:    NewDocModel(store),
+		tabs:   NewTabBar(),
+		help:   h,
+		keys:   newKeyBindings(),
 	}
 }
 
@@ -55,12 +67,36 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quitting = true
 				return m, tea.Quit
 			}
+		case "?":
+			m.showHelp = !m.showHelp
+			return m, nil
+		case "ctrl+tab":
+			if m.tabs.HasTabs() {
+				m.tabs.NextTab()
+				if tab, ok := m.tabs.ActiveTab(); ok {
+					m.doc = NewDocModel(m.store)
+					return m, m.doc.LoadDocument(tab.DocID)
+				}
+			}
+			return m, nil
+		case "ctrl+w":
+			if m.tabs.HasTabs() {
+				m.tabs.CloseTab()
+				if tab, ok := m.tabs.ActiveTab(); ok {
+					m.doc = NewDocModel(m.store)
+					return m, m.doc.LoadDocument(tab.DocID)
+				} else {
+					m.mode = modeList
+					m.list = m.list.Focus()
+				}
+			}
+			return m, nil
 		}
 
 	case tea.WindowSizeMsg:
 		m.list.SetSize(msg.Width, msg.Height-4)
-		_, _ = m.doc.Update(msg) // Update doc with new window size
-		// Don't return cmd here, let it be handled in mode switch below
+		_, _ = m.doc.Update(msg)
+		m.tabs.SetWidth(msg.Width)
 
 	case searchTickMsg:
 		var cmd tea.Cmd
@@ -86,6 +122,7 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.mode = modeDoc
 		m.list = m.list.Blur()
 		m.doc = NewDocModel(m.store)
+		m.tabs.AddTab(msg.result.Name, msg.result.DocID, "")
 		return m, m.doc.LoadDocument(msg.result.DocID)
 
 	case loadDocMsg:
@@ -104,7 +141,18 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case docLinkMsg:
-		// TODO: Implement open new tab on link activation
+		if !m.tabs.TabLimitReached() {
+			ctx := context.Background()
+			doc, err := m.store.ReadDocument(ctx, msg.target)
+			if err == nil {
+				results, err := m.store.Search(ctx, doc.Path, 1)
+				if err == nil && len(results) > 0 {
+					m.tabs.AddTab(results[0].Name, results[0].DocID, "")
+					m.doc = NewDocModel(m.store)
+					return m, m.doc.LoadDocument(results[0].DocID)
+				}
+			}
+		}
 		return m, nil
 
 	case focusSearchMsg:
@@ -133,21 +181,43 @@ func (m RootModel) View() string {
 		return "Goodbye!\n"
 	}
 
-	var help string
+	if m.showHelp {
+		return m.renderHelpView()
+	}
+
+	var helpText string
 
 	switch m.mode {
 	case modeSearch:
 		searchView := m.search.View()
-		help = helpStyle.Render("Ctrl+C: quit  Enter: search  Esc: clear")
-		return lipgloss.JoinVertical(lipgloss.Left, searchView, "", help)
+		helpText = m.help.View(m.keys)
+		return lipgloss.JoinVertical(lipgloss.Left, searchView, "", helpText)
 	case modeList:
 		searchView := m.search.View()
-		help = helpStyle.Render("j/k: nav  Enter: open  /: search  q: quit  Esc: back")
-		return lipgloss.JoinVertical(lipgloss.Left, searchView, "", m.list.View(), "", help)
+		helpText = m.help.View(m.keys)
+		return lipgloss.JoinVertical(lipgloss.Left, searchView, "", m.list.View(), "", helpText)
 	case modeDoc:
-		help = helpStyle.Render("j/k: scroll  g/G: top/bottom  d/u: half-page  Esc: back  /: search  1-9: link")
-		return lipgloss.JoinVertical(lipgloss.Left, m.doc.View(), "", help)
+		var parts []string
+		if m.tabs.HasTabs() {
+			parts = append(parts, m.tabs.Render())
+		}
+		parts = append(parts, m.doc.View())
+		helpText := m.help.View(m.keys)
+		parts = append(parts, "", helpText)
+		return lipgloss.JoinVertical(lipgloss.Left, parts...)
 	default:
 		return ""
 	}
+}
+
+// renderHelpView renders the full help overlay.
+func (m RootModel) renderHelpView() string {
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		titleStyle.Render("Keyboard Shortcuts"),
+		"",
+		m.help.View(m.keys),
+		"",
+		dimStyle.Render("Press ? to close help"),
+	)
 }

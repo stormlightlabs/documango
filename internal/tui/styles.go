@@ -18,6 +18,8 @@ var (
 	docTitleStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#22c55e")).Bold(true)
 	docBackStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#737373"))
 	docLinksStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("#737373")).Italic(true)
+	activeTabStyle    = newWithColor("#0a0a0a").Background(lipgloss.Color("#22c55e")).Bold(true)
+	inactiveTabStyle  = newWithColor("#a1a1a1").Background(lipgloss.Color("#1f1f1f"))
 )
 
 func newWithColor(c string) lipgloss.Style {

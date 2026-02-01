@@ -2,7 +2,7 @@
 
 See [CHANGELOG](CHANGELOG.md) for completed work.
 
-## Milestone 9: Web Interface
+## [DONE] Milestone 9: Web Interface
 
 Browser-based documentation reader with Monobrutalist design system.
 
