@@ -29,3 +29,11 @@ func NormalizeLineEndings(s string) string {
 	s = strings.ReplaceAll(s, "\r\n", "\n")
 	return strings.ReplaceAll(s, "\r", "\n")
 }
+
+// TruncateText truncates text to the specified length.
+func TruncateText(text string, maxLen int) string {
+	if len(text) <= maxLen {
+		return text
+	}
+	return text[:maxLen] + "..."
+}

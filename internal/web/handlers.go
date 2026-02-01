@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -10,21 +9,44 @@ import (
 	"github.com/stormlightlabs/documango/internal/db"
 )
 
+// PackageGroup represents a group of packages by language.
+type PackageGroup struct {
+	Language string
+	Packages []db.PackageInfo
+}
+
+// IndexPageData holds data for the index template.
+type IndexPageData struct {
+	Groups []PackageGroup
+}
+
 // handleIndex displays the landing page with package overview.
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
-	if err := s.renderTemplate(w, "index.html", nil); err != nil {
+	ctx := r.Context()
+
+	packages, err := s.store.ListPackages(ctx)
+	if err != nil {
+		http.Error(w, "Failed to load packages", http.StatusInternalServerError)
+		return
+	}
+
+	groupMap := make(map[string][]db.PackageInfo)
+	for _, pkg := range packages {
+		groupMap[pkg.Language] = append(groupMap[pkg.Language], pkg)
+	}
+
+	var groups []PackageGroup
+	for lang, pkgs := range groupMap {
+		groups = append(groups, PackageGroup{
+			Language: lang,
+			Packages: pkgs,
+		})
+	}
+
+	data := IndexPageData{Groups: groups}
+	if err := s.renderTemplate(w, "index.html", data); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-}
-
-// handleSearch displays search results.
-func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "HTTP 200: Search Results (Placeholder)")
-}
-
-// handleAPISearch provides a JSON search API endpoint.
-func (s *Server) handleAPISearch(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, `{"status": "ok", "message": "Search API (Placeholder)"}`)
 }
 
 // DocPageData holds the data for the document template.

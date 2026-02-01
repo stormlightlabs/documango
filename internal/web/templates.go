@@ -12,7 +12,12 @@ var templates *template.Template
 
 func init() {
 	var err error
-	templates, err = template.ParseFS(assets.TemplateFS, "templates/*.html")
+	funcMap := template.FuncMap{
+		"safeHTML": func(s string) template.HTML {
+			return template.HTML(s)
+		},
+	}
+	templates, err = template.New("").Funcs(funcMap).ParseFS(assets.TemplateFS, "templates/*.html")
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse templates: %v", err))
 	}

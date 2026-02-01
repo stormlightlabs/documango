@@ -1,0 +1,68 @@
+{{template "base.html" .}}
+
+{{define "title"}}Search | Documango{{end}}
+
+{{define "content"}}
+<div class="search-page">
+    <header class="search-header">
+        <h1>Search Documentation</h1>
+    </header>
+
+    <form class="search-form" action="/search" method="GET">
+        <div class="search-input-group">
+            <input type="search" name="q" class="input search-input"
+                placeholder="Search for symbols, functions, types..." value="{{.Query}}" autocomplete="off" autofocus>
+            <button type="submit" class="btn">Search</button>
+        </div>
+        {{if .Package}}
+        <input type="hidden" name="pkg" value="{{.Package}}">
+        <p class="search-filter">Filtering by package: <code>{{.Package}}</code> <a
+                href="/search?q={{.Query}}">(clear)</a></p>
+        {{end}}
+    </form>
+
+    {{if .Query}}
+    <div class="search-results">
+        {{if .Results}}
+        <p class="search-stats">Found {{.Total}} result{{if ne .Total 1}}s{{end}} for "{{.Query}}"</p>
+
+        <div class="results-list">
+            {{range .Results}}
+            <article class="search-result card card-static">
+                <h2 class="search-result-title">
+                    <a href="/doc/{{.Path}}">{{.Title}}</a>
+                </h2>
+                <p class="search-result-path">{{.Path}}</p>
+                <p class="search-result-snippet">{{.Snippet | safeHTML}}</p>
+                <div class="search-result-meta">
+                    <span class="package-badge">{{.Package}}</span>
+                    <span class="score-badge">Score: {{printf "%.2f" .Score}}</span>
+                </div>
+            </article>
+            {{end}}
+        </div>
+        {{else}}
+        <div class="search-empty">
+            <p>No results found for "{{.Query}}"</p>
+            {{if .Package}}
+            <p>Try <a href="/search?q={{.Query}}">searching without the package filter</a> or use different keywords.
+            </p>
+            {{else}}
+            <p>Try different keywords or check your spelling.</p>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+    {{else}}
+    <div class="search-hint">
+        <h2>Search Tips</h2>
+        <ul>
+            <li>Use <code>name:FuncName</code> to search by symbol name</li>
+            <li>Use <code>type:Func</code> to filter by symbol type (Func, Type, Const, etc.)</li>
+            <li>Use <code>body:keyword</code> to search in documentation body</li>
+            <li>Combine filters: <code>name:Context type:Type</code></li>
+        </ul>
+    </div>
+    {{end}}
+</div>
+{{end}}

@@ -3,6 +3,44 @@
 {{define "title"}}Packages | Documango{{end}}
 
 {{define "content"}}
-<h1>Packages</h1>
-<p>Welcome to the Documango web interface.</p>
+<div class="index-page">
+    <header class="index-header">
+        <h1>Documentation Packages</h1>
+        <p class="text-secondary">Browse and search your indexed documentation.</p>
+    </header>
+
+    <section class="index-search">
+        <form action="/search" method="GET" class="search-form">
+            <div class="search-input-group">
+                <input type="search" name="q" class="input search-input"
+                    placeholder="Search across all documentation..." autocomplete="off">
+                <button type="submit" class="btn">Search</button>
+            </div>
+        </form>
+    </section>
+
+    {{if .Groups}}
+    <section class="package-groups">
+        {{range .Groups}}
+        <div class="package-group">
+            <h2 class="package-group-title">{{.Language}}</h2>
+            <div class="package-list">
+                {{range .Packages}}
+                <a href="/search?pkg={{.Name}}" class="package-item">
+                    <span class="package-item-name">{{.Name}}</span>
+                    <span class="package-item-count">{{.DocumentCount}} document{{if ne .DocumentCount
+                        1}}s{{end}}</span>
+                </a>
+                {{end}}
+            </div>
+        </div>
+        {{end}}
+    </section>
+    {{else}}
+    <div class="index-empty">
+        <p>No packages indexed yet.</p>
+        <p class="text-secondary">Use the CLI to add documentation: <code>documango add &lt;package&gt;</code></p>
+    </div>
+    {{end}}
+</div>
 {{end}}

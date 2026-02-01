@@ -901,3 +901,140 @@ code {
         grid-template-columns: 1fr;
     }
 }
+
+.search-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-4);
+}
+
+.search-header {
+    margin-bottom: var(--space-8);
+}
+
+.search-form {
+    margin-bottom: var(--space-8);
+}
+
+.search-input-group {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.search-input {
+    flex: 1;
+}
+
+.search-filter {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--fg-secondary);
+}
+
+.search-stats {
+    font-size: var(--text-sm);
+    color: var(--fg-secondary);
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-2);
+    border-bottom: var(--border-width) solid var(--border);
+}
+
+.results-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.search-result-meta {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+    font-size: var(--text-xs);
+}
+
+.package-badge {
+    background-color: var(--bg-tertiary);
+    color: var(--fg-secondary);
+    padding: var(--space-1) var(--space-2);
+    border: var(--border-width) solid var(--border);
+}
+
+.score-badge {
+    color: var(--fg-muted);
+}
+
+.search-empty {
+    text-align: center;
+    padding: var(--space-12) var(--space-4);
+    color: var(--fg-secondary);
+}
+
+.search-empty p {
+    margin-bottom: var(--space-2);
+}
+
+.search-hint {
+    background-color: var(--bg-secondary);
+    border: var(--border-width) solid var(--border);
+    padding: var(--space-6);
+    margin-top: var(--space-8);
+}
+
+.search-hint h2 {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-4);
+}
+
+.search-hint ul {
+    margin-bottom: 0;
+}
+
+.search-hint li {
+    margin-bottom: var(--space-2);
+}
+
+.search-hint code {
+    background-color: var(--bg-tertiary);
+    padding: var(--space-1) var(--space-2);
+}
+
+/* Index Page Styles */
+.index-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-4);
+}
+
+.index-header {
+    margin-bottom: var(--space-8);
+    text-align: center;
+}
+
+.index-header h1 {
+    margin-bottom: var(--space-2);
+}
+
+.index-search {
+    margin-bottom: var(--space-12);
+}
+
+.index-search .search-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.package-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+.index-empty {
+    text-align: center;
+    padding: var(--space-12) var(--space-4);
+    color: var(--fg-secondary);
+}
+
+.index-empty p {
+    margin-bottom: var(--space-2);
+}

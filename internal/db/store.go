@@ -380,6 +380,48 @@ func (s *Store) DB() *sql.DB {
 	return s.db
 }
 
+// PackageInfo represents a package with its document count.
+type PackageInfo struct {
+	Name          string
+	Language      string
+	DocumentCount int
+}
+
+// ListPackages returns all packages grouped by language with document counts.
+func (s *Store) ListPackages(ctx context.Context) ([]PackageInfo, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT
+			CASE
+				WHEN path LIKE '%/%' THEN SUBSTR(path, 1, INSTR(path, '/') - 1)
+				ELSE path
+			END as language,
+			CASE
+				WHEN path LIKE '%/%/%' THEN SUBSTR(path, 1, INSTR(SUBSTR(path, INSTR(path, '/') + 1), '/') + INSTR(path, '/') - 1)
+				WHEN path LIKE '%/%' THEN SUBSTR(path, 1, INSTR(path, '/') - 1)
+				ELSE path
+			END as package,
+			COUNT(*) as doc_count
+		FROM documents
+		GROUP BY language, package
+		ORDER BY language, package
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var packages []PackageInfo
+	for rows.Next() {
+		var p PackageInfo
+		if err := rows.Scan(&p.Language, &p.Name, &p.DocumentCount); err != nil {
+			return nil, err
+		}
+		packages = append(packages, p)
+	}
+
+	return packages, rows.Err()
+}
+
 // SanitizeQuery wraps the query in double quotes if it contains characters
 // that might break FTS5 (like slashes) and isn't already quoted.
 // It preserves column filters like "type:Func".
