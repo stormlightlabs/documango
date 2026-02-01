@@ -60,3 +60,11 @@ func Itoa(i int) string {
 	}
 	return string(buf)
 }
+
+func StringPtr(s string) *string {
+	return &s
+}
+
+func BoolPtr(b bool) *bool {
+	return &b
+}

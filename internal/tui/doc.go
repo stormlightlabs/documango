@@ -14,20 +14,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/stormlightlabs/documango/internal/db"
+	"github.com/stormlightlabs/documango/internal/shared"
 )
-
-// Helper functions for creating pointers to primitive values
-func stringPtr(s string) *string {
-	return &s
-}
-
-func boolPtr(b bool) *bool {
-	return &b
-}
-
-func uintPtr(u uint) *uint {
-	return &u
-}
 
 // loadDocMsg is sent to trigger loading a document.
 type loadDocMsg struct {
@@ -118,8 +106,8 @@ func (m DocModel) renderMarkdown(markdown string) (string, error) {
 	theme := ansi.StyleConfig{
 		Document: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
-				Color:           stringPtr("#fafafa"),
-				BackgroundColor: stringPtr("#0a0a0a"),
+				Color:           shared.StringPtr("#fafafa"),
+				BackgroundColor: shared.StringPtr("#0a0a0a"),
 				BlockPrefix:     "",
 				BlockSuffix:     "",
 			},
@@ -127,47 +115,47 @@ func (m DocModel) renderMarkdown(markdown string) (string, error) {
 		Heading: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
 				BlockSuffix: "\n",
-				Color:       stringPtr("#22c55e"),
-				Bold:        boolPtr(true),
+				Color:       shared.StringPtr("#22c55e"),
+				Bold:        shared.BoolPtr(true),
 			},
 		},
 		H1: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
-				Color:       stringPtr("#22c55e"),
-				Bold:        boolPtr(true),
+				Color:       shared.StringPtr("#22c55e"),
+				Bold:        shared.BoolPtr(true),
 				BlockSuffix: "\n",
 			},
 		},
 		H2: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
-				Color:       stringPtr("#22c55e"),
-				Bold:        boolPtr(true),
+				Color:       shared.StringPtr("#22c55e"),
+				Bold:        shared.BoolPtr(true),
 				BlockPrefix: "\n",
 				BlockSuffix: "\n",
 			},
 		},
 		H3: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
-				Color:       stringPtr("#22c55e"),
-				Bold:        boolPtr(true),
+				Color:       shared.StringPtr("#22c55e"),
+				Bold:        shared.BoolPtr(true),
 				BlockPrefix: "\n",
 				BlockSuffix: "\n",
 			},
 		},
 		H4: ansi.StyleBlock{
-			StylePrimitive: ansi.StylePrimitive{Bold: boolPtr(true), BlockPrefix: "\n"},
+			StylePrimitive: ansi.StylePrimitive{Bold: shared.BoolPtr(true), BlockPrefix: "\n"},
 		},
 		H5: ansi.StyleBlock{
-			StylePrimitive: ansi.StylePrimitive{Bold: boolPtr(true), BlockPrefix: "\n"},
+			StylePrimitive: ansi.StylePrimitive{Bold: shared.BoolPtr(true), BlockPrefix: "\n"},
 		},
 		H6: ansi.StyleBlock{
-			StylePrimitive: ansi.StylePrimitive{Bold: boolPtr(true), BlockPrefix: "\n"},
+			StylePrimitive: ansi.StylePrimitive{Bold: shared.BoolPtr(true), BlockPrefix: "\n"},
 		},
-		Text: ansi.StylePrimitive{Color: stringPtr("#fafafa")},
+		Text: ansi.StylePrimitive{Color: shared.StringPtr("#fafafa")},
 		BlockQuote: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
-				Color:       stringPtr("#737373"),
-				Italic:      boolPtr(true),
+				Color:       shared.StringPtr("#737373"),
+				Italic:      shared.BoolPtr(true),
 				BlockPrefix: "> ",
 			},
 		},
@@ -176,8 +164,8 @@ func (m DocModel) renderMarkdown(markdown string) (string, error) {
 		CodeBlock: ansi.StyleCodeBlock{
 			StyleBlock: ansi.StyleBlock{
 				StylePrimitive: ansi.StylePrimitive{
-					Color:           stringPtr("#e5e5e5"),
-					BackgroundColor: stringPtr("#1f1f1f"),
+					Color:           shared.StringPtr("#e5e5e5"),
+					BackgroundColor: shared.StringPtr("#1f1f1f"),
 					BlockPrefix:     "\n",
 					BlockSuffix:     "\n",
 				},
@@ -186,8 +174,8 @@ func (m DocModel) renderMarkdown(markdown string) (string, error) {
 		Paragraph: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{BlockPrefix: "\n", BlockSuffix: "\n"},
 		},
-		Link:     ansi.StylePrimitive{Color: stringPtr("#22c55e"), Underline: boolPtr(true)},
-		LinkText: ansi.StylePrimitive{Color: stringPtr("#22c55e"), Bold: boolPtr(true)},
+		Link:     ansi.StylePrimitive{Color: shared.StringPtr("#22c55e"), Underline: shared.BoolPtr(true)},
+		LinkText: ansi.StylePrimitive{Color: shared.StringPtr("#22c55e"), Bold: shared.BoolPtr(true)},
 	}
 
 	r, err := glamour.NewTermRenderer(glamour.WithStyles(theme), glamour.WithWordWrap(80))

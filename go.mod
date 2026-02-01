@@ -20,12 +20,14 @@ require (
 	github.com/JohannesKaufmann/html-to-markdown/v2 v2.5.0
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.10
+	github.com/charmbracelet/x/exp/teatest v0.0.0-20260127155452-b72a9a918687
 	github.com/goccy/go-yaml v1.19.2
 )
 
 require (
 	github.com/JohannesKaufmann/dom v0.2.0 // indirect
 	github.com/atotto/clipboard v0.1.4 // indirect
+	github.com/aymanbagabas/go-udiff v0.3.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect

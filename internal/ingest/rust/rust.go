@@ -543,7 +543,6 @@ func parseRustdocHTMLFromDoc(doc *goquery.Document) string {
 		),
 	)
 
-	// Remove unwanted elements globally before conversion
 	doc.Find("#copy-path").Remove()
 	doc.Find(".doc-anchor").Remove()
 	doc.Find("a.anchor").Remove()
@@ -552,14 +551,13 @@ func parseRustdocHTMLFromDoc(doc *goquery.Document) string {
 	doc.Find(".toggle-label").Remove()
 	doc.Find("summary.hideme").Remove()
 	doc.Find(".sidebar-top-doc").Remove()
-	doc.Find(".main-heading > h1 > a").Remove() // Remove breadcrumbs in h1
+	doc.Find(".main-heading > h1 > a").Remove()
 
 	main := doc.Find("main")
 	if main.Length() == 0 {
 		return ""
 	}
 
-	// Remove any remaining buttons in main
 	main.Find("button").Remove()
 
 	innerHTML, err := main.Html()
@@ -572,12 +570,10 @@ func parseRustdocHTMLFromDoc(doc *goquery.Document) string {
 		return ""
 	}
 
-	// Post-process to remove § and clean up
 	lines := strings.Split(md, "\n")
 	var cleanedLines []string
 	for _, line := range lines {
 		cleaned := cleanText(line)
-		// Specifically handle the case where headers might have § at the end
 		cleanedLines = append(cleanedLines, cleaned)
 	}
 
@@ -592,20 +588,19 @@ func cleanText(s string) string {
 }
 
 func extractSignature(markdown string) string {
-	lines := strings.Split(markdown, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(markdown, "\n")
+	for line := range lines {
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "```rust") {
 			continue
 		}
-		// Handle modules: "# Module de" -> "mod de"
-		if strings.HasPrefix(trimmed, "# Module ") {
-			return "mod " + strings.TrimPrefix(trimmed, "# Module ")
+
+		if after, ok := strings.CutPrefix(trimmed, "# Module "); ok {
+			return "mod " + after
 		}
 		if strings.HasPrefix(trimmed, "pub ") || strings.HasPrefix(trimmed, "fn ") ||
 			strings.HasPrefix(trimmed, "struct ") || strings.HasPrefix(trimmed, "enum ") ||
 			strings.HasPrefix(trimmed, "trait ") || strings.HasPrefix(trimmed, "type ") {
-			// Remove pub for cleaner signatures in agent context
 			sig := strings.TrimSuffix(trimmed, ";")
 			return strings.TrimPrefix(sig, "pub ")
 		}

@@ -10,11 +10,6 @@ import (
 	"github.com/stormlightlabs/documango/internal/db"
 )
 
-// listResultMsg is sent when a user selects a search result.
-type listResultMsg struct {
-	result db.SearchResult
-}
-
 // listSelectMsg is sent when the user presses Enter on a result.
 type listSelectMsg struct {
 	result db.SearchResult
@@ -84,7 +79,6 @@ func (d ResultDelegate) Render(w io.Writer, m list.Model, index int, item list.I
 		typeStr = typeStyle.Render(results.Type)
 	}
 
-	// Layout: name on first line, type badge on second line
 	fmt.Fprintf(w, "%s\n%s", name, typeStr)
 }
 

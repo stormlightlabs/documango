@@ -14,7 +14,7 @@ Browser-based documentation reader with Monobrutalist design system.
 
 **DoD**: Can browse and search documentation in web browser.
 
-## Milestone 10: TUI
+## [DONE] Milestone 10: TUI
 
 Interactive terminal interface.
 
