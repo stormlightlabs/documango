@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## [0.3.0] - 2026-02-01
+
+### Added
+
+- TUI (Terminal User Interface) built on Bubble Tea
+    - Search and reading documentation from the terminal.
+    - Tabbed browsing capability, vim-style navigation, and custom glamour-based
+      markdown renderer.
+
+## [0.2.0] - 2026-01-31
+
+### Added
+
+- Browser-based documentation reader with "Monobrutalist" design system.
+  Uses HTTP server with server-side Goldmark rendering & JSON search API.
+
 ## [0.1.0] - 2026-01-28
 
 ### Added
